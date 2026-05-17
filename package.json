@@ -1,0 +1,43 @@
+{
+  "name": "quadro",
+  "version": "0.0.1",
+  "description": "Fluent, fully-typed Excel builder for Node.js — styles, formulas, merged cells, headers, streaming",
+  "main": "dist/cjs/index.js",
+  "types": "dist/cjs/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "npm run clean && npm run build:js && npm run build:dts",
+    "build:js": "rolldown -c",
+    "build:dts": "tsc -p tsconfig.cjs.json && tsc -p tsconfig.esm.json",
+    "prepublishOnly": "npm run build",
+    "typecheck": "tsc --noEmit",
+    "example": "ts-node scripts/example.ts"
+  },
+  "keywords": [
+    "excel",
+    "xlsx",
+    "exceljs",
+    "typescript",
+    "builder"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "exceljs": "^4.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "fast-xml-parser": "^5.8.0",
+    "rolldown": "^1.0.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
