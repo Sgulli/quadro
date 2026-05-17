@@ -62,6 +62,9 @@ export function mul(a: string | number, b: string | number): FormulaValue {
 }
 
 export function div(a: string | number, b: string | number): FormulaValue {
+  if (Number.parseFloat(b.toString()) === 0) {
+    return { formula: `DIV0(${a},${b})` };
+  }
   return { formula: `${a}/${b}` };
 }
 
@@ -77,8 +80,14 @@ export function ifExpr(
   ifTrue: string | number | FormulaValue,
   ifFalse: string | number | FormulaValue,
 ): FormulaValue {
-  const thenVal = typeof ifTrue === "object" && "formula" in ifTrue ? ifTrue.formula : esc(ifTrue);
-  const elseVal = typeof ifFalse === "object" && "formula" in ifFalse ? ifFalse.formula : esc(ifFalse);
+  const thenVal =
+    typeof ifTrue === "object" && "formula" in ifTrue
+      ? ifTrue.formula
+      : esc(ifTrue);
+  const elseVal =
+    typeof ifFalse === "object" && "formula" in ifFalse
+      ? ifFalse.formula
+      : esc(ifFalse);
   return { formula: `IF(${condition},${thenVal},${elseVal})` };
 }
 
