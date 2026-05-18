@@ -111,9 +111,61 @@ Raw formulas also work: `{ formula: "SUM(C3:C8)", result: 217000 }`.
 
 ## Styles
 
-Presets: `Styles.header`, `Styles.currency`, `Styles.percent`, `Styles.totalRow`, `Styles.inputCell`, `Styles.subHeader`, `Styles.boxBorder`.
+### Presets
 
-Custom: use `CellStyle` interface (font, fill, border, alignment, numberFormat).
+| Preset | Use |
+|--------|-----|
+| `Styles.header` | Column headers — bold white on blue, center aligned |
+| `Styles.subHeader` | Sub-section headers — blue on light blue |
+| `Styles.totalRow` | Totals — bold on yellow with double bottom border |
+| `Styles.currency` | Right-aligned number format |
+| `Styles.percent` | Right-aligned `%` format (2 decimals) |
+| `Styles.date` | Centered date format |
+| `Styles.boxBorder` | Thin grey border all sides |
+| `Styles.inputCell` | Blue font — hardcoded input convention |
+| `Styles.formulaCell` | Black font — formula convention |
+| `Styles.linkCell` | Green font — cross-sheet link convention |
+
+### Composable styles
+
+Build styles from partials with `style()` — deep-merges font, fill, border, alignment, and numberFormat so you can mix reusable pieces.
+
+```ts
+import { style, font, fill, numFmt, border, align, currency } from "quadro";
+
+const euroCell = style(
+  font({ bold: true, size: 10, name: "Arial" }),
+  fill({ type: "solid", color: "FFFFF2CC" }),
+  border.thinBlack,
+  align.right,
+  numFmt(currency("€")),
+);
+```
+
+| Part | Description |
+|------|-------------|
+| `style(...parts)` | Deep-merge multiple partials into a `CellStyle` |
+| `font({...})` | `{ font: Font }` — bold, size, color, name, etc. |
+| `fill({...})` | `{ fill: Fill }` — solid or gradient |
+| `numFmt(fmt)` | `{ numberFormat: NumberFormat }` — e.g. `currency("€")` |
+| `border.thinBlack` | Thin black border on all 4 sides |
+| `border.thinGrey` | Thin grey border on all 4 sides |
+| `border.thin(color)` | Thin border with custom ARGB color |
+| `border.all(style, color)` | Any border style/color on all sides |
+| `align.center` | Horizontal center, vertical middle |
+| `align.centerWrap` | Center + `wrapText` |
+| `align.left` / `align.right` | Left/right + middle |
+| `align.leftWrap` / `align.rightWrap` | Left/right + `wrapText` |
+
+### Number format helpers
+
+`currency("€")` returns `"€"#,##0.00` — works with any symbol.
+
+```ts
+style({ numberFormat: currency("$") })      // "$"#,##0.00
+style({ numberFormat: currency("€") })      // "€"#,##0.00
+style({ numberFormat: accounting("€") })    // "€"#,##0.00;("€"#,##0.00);"-"
+```
 
 ## License
 

@@ -10,6 +10,7 @@ import {
   BUILTIN_FORMATS,
   type Alignment,
   type Border,
+  type BorderStyle,
   type CellStyle,
   type Fill,
   type Font,
@@ -156,6 +157,158 @@ export function colLetter(n: number): string {
     n = Math.floor((n - 1) / 26);
   }
   return r;
+}
+
+// ─── style() compose helper ──────────────────────────────────────────────────
+
+/**
+ * Compose a `CellStyle` from multiple partial style objects.
+ * Later parts override earlier ones. Sub-objects (font, border, alignment)
+ * are deep-merged at the leaf level so you can mix-and-match partials.
+ *
+ * @example
+ * ```ts
+ * const myStyle = style(
+ *   { font: { bold: true, color: "FFFFFFFF" } },
+ *   { fill: { type: "solid", color: "FF2B579A" } },
+ *   align.centerWrap,
+ *   border.thinBlack,
+ * );
+ * ```
+ */
+export function style(...parts: CellStyle[]): CellStyle {
+  const out: CellStyle = {};
+  for (const p of parts) {
+    if (p.font) out.font = { ...out.font, ...p.font };
+    if (p.fill) out.fill = p.fill;
+    if (p.border) out.border = { ...out.border, ...p.border };
+    if (p.alignment) out.alignment = { ...out.alignment, ...p.alignment };
+    if (p.numberFormat) out.numberFormat = p.numberFormat;
+    if (p.protection) out.protection = { ...out.protection, ...p.protection };
+  }
+  return out;
+}
+
+// ─── border presets ──────────────────────────────────────────────────────────
+
+function borderAll(styleName: BorderStyle, color: string): Border {
+  return {
+    top: { style: styleName, color },
+    bottom: { style: styleName, color },
+    left: { style: styleName, color },
+    right: { style: styleName, color },
+  };
+}
+
+function borderPart(styleName: BorderStyle, color: string): CellStyle {
+  return { border: borderAll(styleName, color) };
+}
+
+/**
+ * Pre-built border partials — pass into `style()` or use standalone.
+ *
+ * @example
+ * ```ts
+ * style({ font: { bold: true } }, border.thinBlack)
+ * ```
+ */
+export const border = {
+  /** Thin black border on all four sides ("FF000000") */
+  thinBlack: borderPart("thin", "FF000000"),
+
+  /** Thin grey border on all four sides ("FFBFBFBF") */
+  thinGrey: borderPart("thin", "FFBFBFBF"),
+
+  /** Medium black border on all four sides */
+  mediumBlack: borderPart("medium", "FF000000"),
+
+  /** Thin border with a custom ARGB color */
+  thin(color: string): CellStyle {
+    return borderPart("thin", color);
+  },
+
+  /** Custom border applied to all four sides */
+  all(styleName: BorderStyle, color: string): CellStyle {
+    return borderPart(styleName, color);
+  },
+};
+
+// ─── alignment presets ───────────────────────────────────────────────────────
+
+/**
+ * Pre-built alignment partials — pass into `style()` or use standalone.
+ *
+ * @example
+ * ```ts
+ * style({ font: { bold: true } }, align.centerWrap)
+ * ```
+ */
+export const align = {
+  center: { alignment: { horizontal: "center", vertical: "middle" } } as const satisfies CellStyle,
+  centerWrap: { alignment: { horizontal: "center", vertical: "middle", wrapText: true } } as const satisfies CellStyle,
+  left: { alignment: { horizontal: "left", vertical: "middle" } } as const satisfies CellStyle,
+  leftWrap: { alignment: { horizontal: "left", vertical: "middle", wrapText: true } } as const satisfies CellStyle,
+  right: { alignment: { horizontal: "right", vertical: "middle" } } as const satisfies CellStyle,
+  rightWrap: { alignment: { horizontal: "right", vertical: "middle", wrapText: true } } as const satisfies CellStyle,
+};
+
+// ─── Number format helpers ───────────────────────────────────────────────────
+
+/**
+ * Generate a currency number format string for any symbol.
+ *
+ * @example
+ * ```ts
+ * style({ numberFormat: currency("€") })
+ * style({ numberFormat: currency("$") })
+ * style({ numberFormat: accounting("€") })
+ * ```
+ */
+export function currency(symbol: string): string {
+  return `"${symbol}"#,##0.00`;
+}
+
+/** Accounting-style format (negatives in parens) for any symbol. */
+export function accounting(symbol: string): string {
+  return `"${symbol}"#,##0.00;("${symbol}"#,##0.00);"-"`;
+}
+
+// ─── Style-part wrappers ────────────────────────────────────────────────────
+
+/**
+ * Shorthand for `{ font: opts }` — pass into `style()`.
+ *
+ * @example
+ * ```ts
+ * style(font({ bold: true, size: 10 }), align.center)
+ * ```
+ */
+export function font(opts: Font): CellStyle {
+  return { font: opts };
+}
+
+/**
+ * Shorthand for `{ fill: opts }` — pass into `style()`.
+ *
+ * @example
+ * ```ts
+ * style(fill({ type: "solid", color: "FFDCE6F1" }), border.thinBlack)
+ * ```
+ */
+export function fill(opts: Fill): CellStyle {
+  return { fill: opts };
+}
+
+/**
+ * Shorthand for `{ numberFormat: opts }` — pass into `style()`.
+ *
+ * @example
+ * ```ts
+ * style(numFmt(currency("€")), align.right)
+ * ```
+ */
+export function numFmt(opts: NumberFormat): CellStyle {
+  return { numberFormat: opts };
 }
 
 // ─── Preset Styles ───────────────────────────────────────────────────────────
