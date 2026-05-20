@@ -35,7 +35,7 @@
 
 ## v0.4 — Named Ranges, Tables & Charting
 
-- [ ] Named Ranges / Defined Names
+- [x] Named Ranges / Defined Names
 - [ ] Tables (structured references, totals row, banded rows, table styles)
 - [ ] Charts API (bar, line, pie, scatter, bubble, radar, stock, surface, waterfall, treemap, sunburst, funnel, histogram, pareto, boxWhisker, regionMap, combo)
 - [ ] Sparklines (in-cell mini charts)
