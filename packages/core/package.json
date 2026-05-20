@@ -36,13 +36,13 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@cj-tech-master/excelts": "9.5.4"
+    "@cj-tech-master/excelts": "9.5.7"
   },
   "devDependencies": {
     "@quadro/tsconfig": "workspace:*",
-    "rolldown": "^1.0.1",
+    "rolldown": "^1.0.2",
     "typescript": "^5.8.3",
-    "@vitest/coverage-v8": "^4.1.6",
-    "vitest": "^4.1.6"
+    "@vitest/coverage-v8": "^4.1.7",
+    "vitest": "^4.1.7"
   }
 }
