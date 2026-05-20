@@ -129,6 +129,7 @@ export type {
   ContainsTextOperators,
   DataValidation,
   DataValidationOperator,
+  DefinedNameModel,
   IconSetTypes,
   TimePeriodTypes,
 } from "@cj-tech-master/excelts";

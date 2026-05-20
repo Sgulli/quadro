@@ -1,8 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
-import { Workbook as ExcelWorkbook } from "@cj-tech-master/excelts";
+import { type DefinedNameModel, Workbook as ExcelWorkbook } from "@cj-tech-master/excelts";
 import { SheetBuilder } from "./sheet-builder.js";
 import type { SheetOptions, WorkbookOptions, WriteResult } from "./types.js";
+import { colLetter } from "./utils.js";
 
 export class WorkbookBuilder {
   private _wb: ExcelWorkbook;
@@ -134,6 +135,53 @@ export class WorkbookBuilder {
 
   get workbook(): ExcelWorkbook {
     return this._wb;
+  }
+
+  /** Register a named range (workbook‑level by default). */
+  defineName(
+    name: string,
+    address: string,
+    sheetName?: string,
+    options?: { hidden?: boolean },
+  ): this {
+    const loc = sheetName ? `${sheetName}!${address}` : address;
+    if (options?.hidden) {
+      this._wb.definedNames.addHidden(loc, name);
+    } else {
+      this._wb.definedNames.add(loc, name);
+    }
+    return this;
+  }
+
+  /** Register a named range by 1‑based coordinates. */
+  defineNameRC(
+    name: string,
+    col1: number,
+    row1: number,
+    col2: number,
+    row2: number,
+    sheetName?: string,
+    options?: { hidden?: boolean },
+  ): this {
+    const address = `${colLetter(col1)}${row1}:${colLetter(col2)}${row2}`;
+    return this.defineName(name, address, sheetName, options);
+  }
+
+  /** Register a formula‑based defined name (e.g. `"LAMBDA(x,y,x+y)"`). */
+  defineFormula(name: string, expression: string): this {
+    this._wb.definedNames.addFormula(name, expression);
+    return this;
+  }
+
+  /** Remove a defined name by address and name. */
+  removeDefinedName(name: string, address: string): this {
+    this._wb.definedNames.remove(address, name);
+    return this;
+  }
+
+  /** Get all defined names. */
+  getDefinedNames(): DefinedNameModel[] {
+    return this._wb.definedNames.getAllEntries();
   }
 
   private async _finalizeAll(): Promise<void> {
