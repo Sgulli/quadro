@@ -65,6 +65,13 @@ export class SheetBuilder {
    * @param key ColumnDef key
    * @param startRow First data row (defaults to 1 if no headers, 2 after header row)
    */
+  /** Get the 1‑based column index for a column key. */
+  columnIndex(key: string): number {
+    const col = this._columns.find((c) => c.key === key);
+    if (!col) throw new Error(`[SheetBuilder] No column with key "${key}".`);
+    return this._columns.indexOf(col) + 1;
+  }
+
   columnRange(key: string, startRow?: number): string {
     if (startRow === undefined) startRow = this._headerWritten ? 2 : 1;
     const col = this._columns.find((c) => c.key === key);
@@ -250,6 +257,11 @@ export class SheetBuilder {
 
   addDataValidationRC(col: number, row: number, validation: DataValidation): this {
     return this.addDataValidation(cellRef(col, row), validation);
+  }
+
+  removeDataValidation(address: string): this {
+    this._ws.dataValidations.remove(address);
+    return this;
   }
 
   addListValidation(
