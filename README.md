@@ -29,8 +29,17 @@ await new WorkbookBuilder({ author: "Acme Corp" })
 
 ```sh
 npm install @quadro/core
+```
+
+```sh
 pnpm add @quadro/core
+```
+
+```sh
 yarn add @quadro/core
+```
+
+```sh
 bun add @quadro/core
 ```
 
