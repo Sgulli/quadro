@@ -37,7 +37,14 @@ import type {
   RowOptions,
   SheetOptions,
 } from "./types.js";
-import { applyStyle, colLetter, formatHeaderFooterSection } from "./utils.js";
+import {
+  applyStyle,
+  cellRef,
+  colLetter,
+  colRange,
+  formatHeaderFooterSection,
+  rangeRef,
+} from "./utils.js";
 
 export class SheetBuilder {
   private readonly _ws: ExcelWorksheet;
@@ -136,6 +143,16 @@ export class SheetBuilder {
     return this;
   }
 
+  /** Set a cell by 1‑based column and row numbers instead of A1 notation. */
+  setCellRC(col: number, row: number, value?: CellValue, style?: CellStyle): this {
+    return this.setCell(cellRef(col, row), value, style);
+  }
+
+  /** Style a range by 1‑based corner coordinates. */
+  styleRangeRC(col1: number, row1: number, col2: number, row2: number, style: CellStyle): this {
+    return this.styleRange(rangeRef(col1, row1, col2, row2), style);
+  }
+
   styleRange(range: string, style: CellStyle): this {
     const [tl, br] = range.split(":");
     if (!tl) return this;
@@ -164,6 +181,20 @@ export class SheetBuilder {
     return this;
   }
 
+  /** Merge cells by 1‑based coordinates. */
+  mergeRC(
+    col1: number,
+    row1: number,
+    col2: number,
+    row2: number,
+    options?: { value?: CellValue; style?: CellStyle; height?: number },
+  ): this {
+    return this.merge({
+      range: `${cellRef(col1, row1)}:${cellRef(col2, row2)}`,
+      ...options,
+    });
+  }
+
   mergeAll(regions: MergeRange[]): this {
     for (const r of regions) this.merge(r);
     return this;
@@ -177,6 +208,11 @@ export class SheetBuilder {
   colWidth(col: string | number, width: number): this {
     this._ws.getColumn(col).width = width;
     return this;
+  }
+
+  /** Set column width by 1‑based column number. */
+  colWidthRC(col: number, width: number): this {
+    return this.colWidth(col, width);
   }
 
   autoFitColumns(startCol?: number | string, endCol?: number | string): this {
@@ -212,6 +248,10 @@ export class SheetBuilder {
     return this;
   }
 
+  addDataValidationRC(col: number, row: number, validation: DataValidation): this {
+    return this.addDataValidation(cellRef(col, row), validation);
+  }
+
   addListValidation(
     address: string,
     list: (string | number | Date)[],
@@ -231,6 +271,24 @@ export class SheetBuilder {
       ...options,
     });
     return this;
+  }
+
+  addListValidationRC(
+    col: number,
+    startRow: number,
+    endRow: number,
+    list: (string | number | Date)[],
+    options?: {
+      allowBlank?: boolean;
+      error?: string;
+      errorTitle?: string;
+      prompt?: string;
+      promptTitle?: string;
+      showErrorMessage?: boolean;
+      showInputMessage?: boolean;
+    },
+  ): this {
+    return this.addListValidation(colRange(col, startRow, endRow), list, options);
   }
 
   addRangeValidation(
@@ -255,6 +313,32 @@ export class SheetBuilder {
       ...options,
     });
     return this;
+  }
+
+  addRangeValidationRC(
+    col: number,
+    startRow: number,
+    endRow: number,
+    type: "whole" | "decimal" | "date" | "textLength",
+    operator: DataValidationOperator,
+    formulae: (string | number | Date)[],
+    options?: {
+      allowBlank?: boolean;
+      error?: string;
+      errorTitle?: string;
+      prompt?: string;
+      promptTitle?: string;
+      showErrorMessage?: boolean;
+      showInputMessage?: boolean;
+    },
+  ): this {
+    return this.addRangeValidation(
+      colRange(col, startRow, endRow),
+      type,
+      operator,
+      formulae,
+      options,
+    );
   }
 
   // ── Conditional Formatting ─────────────────────────────────────────────────
@@ -289,6 +373,18 @@ export class SheetBuilder {
     return this;
   }
 
+  addCellIsRuleRC(
+    col1: number,
+    row1: number,
+    col2: number,
+    row2: number,
+    operator: CellIsOperators,
+    formulae: (string | number)[],
+    style?: Partial<ExcelStyle>,
+  ): this {
+    return this.addCellIsRule(rangeRef(col1, row1, col2, row2), operator, formulae, style);
+  }
+
   addExpressionRule(ref: string, formula: string, style?: Partial<ExcelStyle>): this {
     const rule: ExpressionRuleType = {
       type: "expression",
@@ -299,11 +395,32 @@ export class SheetBuilder {
     return this;
   }
 
+  addExpressionRuleRC(
+    col1: number,
+    row1: number,
+    col2: number,
+    row2: number,
+    formula: string,
+    style?: Partial<ExcelStyle>,
+  ): this {
+    return this.addExpressionRule(rangeRef(col1, row1, col2, row2), formula, style);
+  }
+
   addDataBar(ref: string, color?: { argb?: string; theme?: number }): this {
     const rule: DataBarRuleType = { type: "dataBar" };
     if (color) rule.color = color;
     this._ws.addConditionalFormatting({ ref, rules: [rule] });
     return this;
+  }
+
+  addDataBarRC(
+    col1: number,
+    row1: number,
+    col2: number,
+    row2: number,
+    color?: { argb?: string; theme?: number },
+  ): this {
+    return this.addDataBar(rangeRef(col1, row1, col2, row2), color);
   }
 
   addColorScale(
@@ -323,6 +440,20 @@ export class SheetBuilder {
     return this;
   }
 
+  addColorScaleRC(
+    col1: number,
+    row1: number,
+    col2: number,
+    row2: number,
+    cfvo: {
+      type: "min" | "max" | "num" | "percent" | "percentile" | "formula";
+      value?: number | string;
+    }[],
+    colors?: { argb?: string; theme?: number }[],
+  ): this {
+    return this.addColorScale(rangeRef(col1, row1, col2, row2), cfvo, colors);
+  }
+
   addIconSet(
     ref: string,
     iconSet?: IconSetTypes,
@@ -340,6 +471,21 @@ export class SheetBuilder {
     };
     this._ws.addConditionalFormatting({ ref, rules: [rule] });
     return this;
+  }
+
+  addIconSetRC(
+    col1: number,
+    row1: number,
+    col2: number,
+    row2: number,
+    iconSet?: IconSetTypes,
+    cfvo?: {
+      type: "percent" | "num" | "percentile" | "formula";
+      value?: number | string;
+    }[],
+    options?: { showValue?: boolean; reverse?: boolean },
+  ): this {
+    return this.addIconSet(rangeRef(col1, row1, col2, row2), iconSet, cfvo, options);
   }
 
   addTop10Rule(
@@ -362,6 +508,21 @@ export class SheetBuilder {
     return this;
   }
 
+  addTop10RuleRC(
+    col1: number,
+    row1: number,
+    col2: number,
+    row2: number,
+    rank: number,
+    options?: {
+      percent?: boolean;
+      bottom?: boolean;
+      style?: Partial<ExcelStyle>;
+    },
+  ): this {
+    return this.addTop10Rule(rangeRef(col1, row1, col2, row2), rank, options);
+  }
+
   addAboveAverageRule(
     ref: string,
     options?: { aboveAverage?: boolean; style?: Partial<ExcelStyle> },
@@ -373,6 +534,16 @@ export class SheetBuilder {
     if (options?.style) rule.style = options.style;
     this._ws.addConditionalFormatting({ ref, rules: [rule] });
     return this;
+  }
+
+  addAboveAverageRuleRC(
+    col1: number,
+    row1: number,
+    col2: number,
+    row2: number,
+    options?: { aboveAverage?: boolean; style?: Partial<ExcelStyle> },
+  ): this {
+    return this.addAboveAverageRule(rangeRef(col1, row1, col2, row2), options);
   }
 
   addContainsTextRule(
@@ -391,6 +562,18 @@ export class SheetBuilder {
     return this;
   }
 
+  addContainsTextRuleRC(
+    col1: number,
+    row1: number,
+    col2: number,
+    row2: number,
+    text: string,
+    operator?: ContainsTextOperators,
+    style?: Partial<ExcelStyle>,
+  ): this {
+    return this.addContainsTextRule(rangeRef(col1, row1, col2, row2), text, operator, style);
+  }
+
   addTimePeriodRule(ref: string, timePeriod: TimePeriodTypes, style?: Partial<ExcelStyle>): this {
     const rule: TimePeriodRuleType = {
       type: "timePeriod",
@@ -399,6 +582,17 @@ export class SheetBuilder {
     if (style) rule.style = style;
     this._ws.addConditionalFormatting({ ref, rules: [rule] });
     return this;
+  }
+
+  addTimePeriodRuleRC(
+    col1: number,
+    row1: number,
+    col2: number,
+    row2: number,
+    timePeriod: TimePeriodTypes,
+    style?: Partial<ExcelStyle>,
+  ): this {
+    return this.addTimePeriodRule(rangeRef(col1, row1, col2, row2), timePeriod, style);
   }
 
   // ── Reading / Export ───────────────────────────────────────────────────────

@@ -13,6 +13,13 @@
 - Columns auto-inferred from first object row when not explicitly defined
 - `columnRange()` auto-detects header offset (row 1 vs row 2)
 - CLI commands exposed via `pnpm cli` and `pnpm example`
+- Numeric coordinate API: `setCellRC()`, `mergeRC()`, `styleRangeRC()`, `colWidthRC()`
+- Numeric validation/formatting helpers: `cellRef()`, `colRange()`, `rangeRef()`
+- `addListValidationRC()`, `addRangeValidationRC()`, `addDataValidationRC()`
+- `addCellIsRuleRC()`, `addExpressionRuleRC()`, `addDataBarRC()`, `addColorScaleRC()`
+- `addIconSetRC()`, `addTop10RuleRC()`, `addAboveAverageRuleRC()`
+- `addContainsTextRuleRC()`, `addTimePeriodRuleRC()`
+- Full zero-A1-string sheet building with `for` loops
 
 ## 0.2.0 (unreleased)
 
