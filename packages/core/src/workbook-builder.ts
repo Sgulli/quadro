@@ -1,6 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { Worksheet as ExcelWorksheet } from "@cj-tech-master/excelts";
 import { Workbook as ExcelWorkbook } from "@cj-tech-master/excelts";
 import { SheetBuilder } from "./sheet-builder.js";
 import type { SheetOptions, WorkbookOptions, WriteResult } from "./types.js";
@@ -34,16 +33,22 @@ export class WorkbookBuilder {
     return WorkbookBuilder.load(filePath);
   }
 
-  static async fromCsv(
-    input: string | ArrayBuffer,
-    options?: { fileName?: string },
-  ): Promise<WorkbookBuilder> {
+  static async fromCsv(data: string | ArrayBuffer): Promise<WorkbookBuilder> {
     const wb = new ExcelWorkbook();
-    if (options?.fileName) {
-      await wb.readCsvFile(options.fileName);
-    } else {
-      await wb.readCsv(input);
+    await wb.readCsv(data);
+    const builder = new WorkbookBuilder();
+    builder._wb = wb;
+    for (let i = 0; i < wb.worksheets.length; i++) {
+      const ws = wb.getWorksheet(i + 1);
+      if (!ws) continue;
+      builder._sheets.push(new SheetBuilder(ws, { name: wb.worksheets[i].name }));
     }
+    return builder;
+  }
+
+  static async fromCsvFile(filePath: string): Promise<WorkbookBuilder> {
+    const wb = new ExcelWorkbook();
+    await wb.readCsvFile(filePath);
     const builder = new WorkbookBuilder();
     builder._wb = wb;
     for (let i = 0; i < wb.worksheets.length; i++) {
@@ -70,7 +75,7 @@ export class WorkbookBuilder {
   }
 
   async write(outputPath: string): Promise<WriteResult> {
-    const resolved = path.resolve(outputPath);
+    const resolved = this._safeResolve(outputPath);
     const dir = path.dirname(resolved);
 
     await this._finalizeAll();
@@ -104,12 +109,23 @@ export class WorkbookBuilder {
     return Buffer.from(buf);
   }
 
-  async toCsv(outputPath?: string): Promise<string | void> {
+  async toCsv(outputPath?: string): Promise<string | undefined> {
     if (outputPath) {
       await this._wb.writeCsvFile(path.resolve(outputPath));
       return;
     }
     return this._wb.writeCsv();
+  }
+
+  private _safeResolve(filePath: string): string {
+    const resolved = path.resolve(filePath);
+    if (this._opts.allowedBase) {
+      const base = path.resolve(this._opts.allowedBase);
+      if (!resolved.startsWith(base + path.sep) && resolved !== base) {
+        throw new Error(`Path "${filePath}" is outside allowed directory "${base}"`);
+      }
+    }
+    return resolved;
   }
 
   get sheets(): SheetBuilder[] {

@@ -8,7 +8,7 @@ function resolveCol(col: Ref): string {
 }
 
 function esc(v: string | number): string {
-  return typeof v === "string" ? `"${v}"` : String(v);
+  return typeof v === "string" ? `"${v.replace(/"/g, '""')}"` : String(v);
 }
 
 export function ref(col: Ref, row: number): string {

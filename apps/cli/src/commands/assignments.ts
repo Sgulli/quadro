@@ -1,6 +1,6 @@
 import path from "node:path";
 import type { WriteResult } from "@quadro/core";
-import { align, border, F, style, WorkbookBuilder } from "@quadro/core";
+import { align, border, colLetter, F, style, WorkbookBuilder } from "@quadro/core";
 import { defineCommand } from "citty";
 import {
   mockClubs,
@@ -8,17 +8,6 @@ import {
   mockResultFreeSeats,
   mockSeatRequests,
 } from "../data/mock-data.js";
-
-function colLetter(n: number): string {
-  let r = "";
-  let num = n + 1;
-  while (num > 0) {
-    const rem = (num - 1) % 26;
-    r = String.fromCharCode(65 + rem) + r;
-    num = Math.floor((num - 1) / 26);
-  }
-  return r;
-}
 
 function diffFormula(cl: string, rowA: number, rowB: number): { formula: string } {
   return { formula: `${cl}${rowA}-${cl}${rowB}` };
@@ -48,10 +37,8 @@ const clubNameCell = style(dataCell, { font: { bold: true } }, align.left);
 const footerLabel = style({ font: { bold: true, size: 10, name: "Arial" } }, align.right);
 const footerCell = style(dataCell, { font: { bold: true } });
 
-const HEADER_ROWS = 3;
 const FIXED_COLS = 3;
 const DATA_ROW_START = 3;
-const EMPTY_SEPARATOR = 1;
 
 export interface AssignmentsOptions {
   outputDir?: string;
@@ -129,10 +116,6 @@ export async function handler(options: AssignmentsOptions = {}): Promise<WriteRe
   const dataRowEnd = DATA_ROW_START + sortedClubs.length - 1;
   const assignedRow = dataRowEnd + 2;
   const availableRow = assignedRow + 2;
-
-  const totalRows = HEADER_ROWS + sortedClubs.length + EMPTY_SEPARATOR * 2 + 3;
-  const totalCols = FIXED_COLS + dataCols;
-  console.log(`Layout: ${totalRows} rows x ${totalCols} cols`);
 
   const outputPath = path.join(options.outputDir ?? process.cwd(), "output", "assignments.xlsx");
 

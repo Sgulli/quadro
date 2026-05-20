@@ -48,11 +48,14 @@ importers:
       typescript:
         specifier: ^5.8.3
         version: 5.9.3
+      vitest:
+        specifier: ^4.1.6
+        version: 4.1.6(@types/node@22.19.19)(@vitest/coverage-v8@4.1.6)(vite@8.0.13(@types/node@22.19.19))
 
   packages/core:
     dependencies:
       '@cj-tech-master/excelts':
-        specifier: ^9.5.4
+        specifier: 9.5.4
         version: 9.5.4
     devDependencies:
       '@quadro/tsconfig':

@@ -236,9 +236,12 @@ export interface WorkbookOptions {
   /**
    * Stream mode: write directly to a file path.
    * When set, the workbook operates in streaming mode for
+
    * memory-efficient output of large datasets.
    */
   useStreaming?: boolean;
+  /** Base directory for output path containment (prevents path traversal) */
+  allowedBase?: string;
 }
 
 // ─── Builder Return Types ────────────────────────────────────────────────────

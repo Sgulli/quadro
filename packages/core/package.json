@@ -36,7 +36,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@cj-tech-master/excelts": "^9.5.4"
+    "@cj-tech-master/excelts": "9.5.4"
   },
   "devDependencies": {
     "@quadro/tsconfig": "workspace:*",

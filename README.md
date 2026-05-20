@@ -120,10 +120,15 @@ await wb.write("./output.xlsx");
 const csvString = await wb.toCsv();
 await wb.toCsv("./output.csv");
 
-// Read CSV
-const csvWb = await WorkbookBuilder.fromCsv("name,age\nAlice,30\nBob,25", {
-  fileName: "data.csv",
-});
+// Write CSV
+const csvString = await wb.toCsv();
+await wb.toCsv("./output.csv");
+
+// Read CSV from inline data
+const csvWb = await WorkbookBuilder.fromCsv("name,age\nAlice,30\nBob,25");
+
+// Read CSV from file
+const csvFileWb = await WorkbookBuilder.fromCsvFile("./data.csv");
 ```
 
 ### Streaming (large files)

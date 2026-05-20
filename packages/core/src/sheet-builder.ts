@@ -6,7 +6,6 @@ import type {
   CellValue as ExcelCellValue,
   Row as ExcelRow,
   Worksheet as ExcelWorksheet,
-  RowValues,
   SheetToJSONOptions,
   WorksheetView,
 } from "@cj-tech-master/excelts";
