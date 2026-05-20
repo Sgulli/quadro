@@ -401,4 +401,72 @@ describe("WorkbookBuilder", () => {
 
     expect(result.sizeBytes).toBeGreaterThan(0);
   });
+
+  describe("defined names", () => {
+    it("defineName registers a named range", async () => {
+      const wb = new WorkbookBuilder();
+      wb.addSheet({ name: "Sheet1" }, () => {});
+      wb.defineName("MyRange", "A1:B10", "Sheet1");
+      const names = wb.getDefinedNames();
+      expect(names).toHaveLength(1);
+      expect(names[0].name).toBe("MyRange");
+    });
+
+    it("defineNameRC registers by numeric coordinates", async () => {
+      const wb = new WorkbookBuilder();
+      wb.addSheet({ name: "Sheet1" }, () => {});
+      wb.defineNameRC("Data", 1, 1, 5, 10, "Sheet1");
+      const names = wb.getDefinedNames();
+      expect(names).toHaveLength(1);
+      expect(names[0].ranges[0]).toContain("$A$1:$E$10");
+    });
+
+    it("defineFormula registers a formula-based name", async () => {
+      const wb = new WorkbookBuilder();
+      wb.addSheet({ name: "Sheet1" }, () => {});
+      wb.defineFormula("MyLambda", "LAMBDA(x,y,x+y)");
+      const names = wb.getDefinedNames();
+      expect(names).toHaveLength(1);
+      expect(names[0].name).toBe("MyLambda");
+    });
+
+    it("removeDefinedName clears ranges", async () => {
+      const wb = new WorkbookBuilder();
+      wb.addSheet({ name: "Sheet1" }, () => {});
+      wb.defineName("ToRemove", "$A$1:$B$10", "Sheet1");
+      expect(wb.getDefinedNames()).toHaveLength(1);
+      expect(wb.getDefinedNames()[0].ranges).not.toHaveLength(0);
+      wb.removeDefinedName("ToRemove", "Sheet1!$A$1:$B$10");
+      expect(wb.getDefinedNames()[0].ranges).toHaveLength(0);
+    });
+
+    it("methods are chainable", async () => {
+      const wb = new WorkbookBuilder();
+      wb.addSheet({ name: "Sheet1" }, () => {});
+      const result = wb
+        .defineName("A", "A1", "Sheet1")
+        .defineName("B", "B1", "Sheet1")
+        .defineFormula("C", "42");
+      expect(wb.getDefinedNames()).toHaveLength(3);
+      expect(result).toBe(wb);
+    });
+
+    it("persists named ranges through write and load", async () => {
+      const file = outputPath("named-ranges.xlsx");
+      await new WorkbookBuilder()
+        .addSheet({ name: "Data" }, (sheet) => {
+          sheet.setCell("A1", 10);
+          sheet.setCell("B1", 20);
+        })
+        .defineName("ValueA", "A1", "Data")
+        .defineName("ValueB", "B1", "Data")
+        .write(file);
+
+      const loaded = await WorkbookBuilder.load(file);
+      const names = loaded.workbook.definedNames.getAllEntries();
+      expect(names).toHaveLength(2);
+      expect(names.find((n) => n.name === "ValueA")).toBeDefined();
+      expect(names.find((n) => n.name === "ValueB")).toBeDefined();
+    });
+  });
 });
