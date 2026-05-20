@@ -20,6 +20,10 @@
 - `addIconSetRC()`, `addTop10RuleRC()`, `addAboveAverageRuleRC()`
 - `addContainsTextRuleRC()`, `addTimePeriodRuleRC()`
 - Full zero-A1-string sheet building with `for` loops
+- Conditional formatting removal: `sheet.removeConditionalFormatting()`
+- Rewrote assignments example using pure numeric coordinates (no A1 strings)
+- Fixed pre-existing merge crash in assignments (off-by-one `FIXED_COLS`)
+- Fixed pre-existing TypeScript errors in seat filter type guards
 
 ## 0.2.0 (unreleased)
 

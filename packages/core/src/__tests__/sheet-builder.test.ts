@@ -222,7 +222,14 @@ describe("SheetBuilder", () => {
     });
   });
 
-  describe("setCell", () => {
+  describe("setCell / setCellRC", () => {
+    it("setCellRC delegates with cellRef", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.setCellRC(4, 5, 42);
+      const cell = ws.getCell("D5") as Record<string, unknown>;
+      expect(cell.value).toBe(42);
+    });
+
     it("sets a value at the given address", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       sheet.setCell("B3", 42);
@@ -274,6 +281,17 @@ describe("SheetBuilder", () => {
       const cell = ws.getCell("A1") as Record<string, unknown>;
       expect(cell.value).toBe("Title");
       expect((cell.font as Record<string, unknown>)?.bold).toBe(true);
+    });
+
+    it("mergeRC delegates with rangeRef", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.mergeRC(1, 1, 3, 1, { value: "Title" });
+      expect(ws.mergeCells).toHaveBeenCalledWith("A1:C1");
+    });
+
+    it("mergeRC with height", () => {
+      const { sheet } = makeSheet({ name: "Test" });
+      sheet.mergeRC(1, 1, 1, 1, { height: 30 });
     });
   });
 
@@ -586,6 +604,116 @@ describe("SheetBuilder", () => {
         .addCellIsRule("C1", "greaterThan", [0]);
       expect(ws.dataValidations.add).toHaveBeenCalledTimes(1);
       expect(ws.addConditionalFormatting).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe("data validation RC", () => {
+    it("addDataValidationRC delegates with cellRef", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.addDataValidationRC(3, 5, { type: "any" });
+      expect(ws.dataValidations.add).toHaveBeenCalledWith("C5", { type: "any" });
+    });
+
+    it("addListValidationRC delegates with colRange", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.addListValidationRC(2, 3, 10, ["X", "Y"]);
+      expect(ws.dataValidations.add).toHaveBeenCalledWith("B3:B10", {
+        type: "list",
+        formulae: ['"X"', '"Y"'],
+      });
+    });
+
+    it("addRangeValidationRC delegates with colRange", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.addRangeValidationRC(4, 2, 100, "whole", "between", [1, 100]);
+      expect(ws.dataValidations.add).toHaveBeenCalledWith("D2:D100", {
+        type: "whole",
+        operator: "between",
+        formulae: [1, 100],
+      });
+    });
+  });
+
+  describe("conditional formatting RC", () => {
+    it("addCellIsRuleRC delegates with rangeRef", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.addCellIsRuleRC(2, 3, 4, 10, "greaterThan", [100]);
+      expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
+        ref: "B3:D10",
+        rules: [{ type: "cellIs", operator: "greaterThan", formulae: [100] }],
+      });
+    });
+
+    it("addExpressionRuleRC delegates with rangeRef", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.addExpressionRuleRC(1, 1, 5, 5, "A1>0");
+      expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
+        ref: "A1:E5",
+        rules: [{ type: "expression", formulae: ["A1>0"] }],
+      });
+    });
+
+    it("addDataBarRC delegates with rangeRef", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.addDataBarRC(2, 2, 2, 20);
+      expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
+        ref: "B2:B20",
+        rules: [{ type: "dataBar" }],
+      });
+    });
+
+    it("addColorScaleRC delegates with rangeRef", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.addColorScaleRC(3, 1, 3, 10, [{ type: "min" }, { type: "max" }]);
+      expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
+        ref: "C1:C10",
+        rules: [{ type: "colorScale", cfvo: [{ type: "min" }, { type: "max" }] }],
+      });
+    });
+
+    it("addIconSetRC delegates with rangeRef", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.addIconSetRC(4, 1, 4, 10, "3TrafficLights1");
+      expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
+        ref: "D1:D10",
+        rules: [{ type: "iconSet", iconSet: "3TrafficLights1" }],
+      });
+    });
+
+    it("addTop10RuleRC delegates with rangeRef", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.addTop10RuleRC(5, 1, 5, 10, 5);
+      expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
+        ref: "E1:E10",
+        rules: [{ type: "top10", rank: 5, percent: false }],
+      });
+    });
+
+    it("addAboveAverageRuleRC delegates with rangeRef", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.addAboveAverageRuleRC(6, 1, 6, 10);
+      expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
+        ref: "F1:F10",
+        rules: [{ type: "aboveAverage" }],
+      });
+    });
+
+    it("addContainsTextRuleRC delegates with rangeRef", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.addContainsTextRuleRC(7, 1, 7, 10, "urgent");
+      expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
+        ref: "G1:G10",
+        rules: [{ type: "containsText", text: "urgent" }],
+      });
+    });
+
+    it("addTimePeriodRuleRC delegates with rangeRef", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.addTimePeriodRuleRC(8, 1, 8, 10, "thisMonth");
+      expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
+        ref: "H1:H10",
+        rules: [{ type: "timePeriod", timePeriod: "thisMonth" }],
+      });
     });
   });
 });

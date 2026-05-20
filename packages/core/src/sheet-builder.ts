@@ -7,12 +7,12 @@ import type {
   CellIsRuleType,
   ColorScaleRuleType,
   ConditionalFormattingOptions,
-  ConditionalFormattingRule,
   ContainsTextOperators,
   ContainsTextRuleType,
   DataBarRuleType,
   DataValidation,
   DataValidationOperator,
+  DataValidationWithFormulae,
   Cell as ExcelCell,
   CellValue as ExcelCellValue,
   Row as ExcelRow,
@@ -255,19 +255,11 @@ export class SheetBuilder {
   addListValidation(
     address: string,
     list: (string | number | Date)[],
-    options?: {
-      allowBlank?: boolean;
-      error?: string;
-      errorTitle?: string;
-      prompt?: string;
-      promptTitle?: string;
-      showErrorMessage?: boolean;
-      showInputMessage?: boolean;
-    },
+    options?: Omit<DataValidationWithFormulae, "type" | "formulae" | "operator">,
   ): this {
     this._ws.dataValidations.add(address, {
       type: "list",
-      formulae: list.map((v) => (typeof v === "string" ? `"${v}"` : String(v))),
+      formulae: list.map(formatListValue),
       ...options,
     });
     return this;
@@ -296,15 +288,7 @@ export class SheetBuilder {
     type: "whole" | "decimal" | "date" | "textLength",
     operator: DataValidationOperator,
     formulae: (string | number | Date)[],
-    options?: {
-      allowBlank?: boolean;
-      error?: string;
-      errorTitle?: string;
-      prompt?: string;
-      promptTitle?: string;
-      showErrorMessage?: boolean;
-      showInputMessage?: boolean;
-    },
+    options?: Omit<DataValidationWithFormulae, "type" | "formulae" | "operator">,
   ): this {
     this._ws.dataValidations.add(address, {
       type,
@@ -736,6 +720,17 @@ export class SheetBuilder {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatListValue(v: string | number | Date): string | number | Date {
+  if (typeof v === "string") return `"${v.replace(/"/g, '""')}"`;
+  if (v instanceof Date) {
+    const y = v.getFullYear();
+    const m = String(v.getMonth() + 1).padStart(2, "0");
+    const d = String(v.getDate()).padStart(2, "0");
+    return `"${y}-${m}-${d}"`;
+  }
+  return v;
+}
 
 function isFormula(val: CellValue): val is { formula: string; result?: CellPrimitive } {
   return (
