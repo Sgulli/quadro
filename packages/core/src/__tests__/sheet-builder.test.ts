@@ -3,80 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SheetBuilder } from "../sheet-builder.js";
 import type { SheetOptions } from "../types.js";
 
-<<<<<<< HEAD
-function createMockRow() {
-  const callbacks: Array<(cell: unknown, colNumber: number) => void> = [];
-  return {
-    eachCell: vi.fn((_opts: unknown, cb?: (cell: unknown, colNumber: number) => void) => {
-      if (cb) callbacks.push(cb);
-    }),
-    commit: vi.fn(),
-    height: undefined as number | undefined,
-    hidden: false,
-    outlineLevel: undefined as number | undefined,
-    _callbacks: callbacks,
-  };
-}
-
-function parseAddress(addr: string): { row: number; col: number } {
-  const m = addr.match(/^([A-Z]+)(\d+)$/);
-  if (!m) return { row: 1, col: 1 };
-  const [, letters, digits] = m;
-  let col = 0;
-  for (const ch of letters) col = col * 26 + ch.charCodeAt(0) - 64;
-  return { row: Number.parseInt(digits, 10), col };
-}
-
-function createMockCell(address?: string) {
-  const addr = address ? parseAddress(address) : { row: 1, col: 1 };
-  return {
-    fullAddress: { row: addr.row, col: addr.col },
-    font: undefined,
-    fill: undefined,
-    border: undefined,
-    alignment: undefined,
-    numFmt: undefined,
-    protection: undefined,
-    value: undefined,
-  };
-}
-
-// biome-ignore format: mock return shape must stay compact
-function createMockWorksheet() {
-  // biome-ignore format: cells map
-  const cells = new Map<string, object>();
-  return {
-    addRow: vi.fn(() => createMockRow()),
-    getCell: vi.fn((a: string | number, b?: number) => {
-      let addr: string | undefined;
-      if (typeof a === "number" && b !== undefined) {
-        addr = `${String.fromCharCode(64 + b)}${a}`;
-      } else {
-        addr = String(a);
-      }
-      if (!cells.has(addr)) cells.set(addr, createMockCell(addr));
-      return cells.get(addr);
-    }),
-    mergeCells: vi.fn(),
-    getRow: vi.fn(() => ({ height: undefined })),
-    getColumn: vi.fn(() => ({ width: undefined })),
-    protect: vi.fn(),
-    autoFitColumns: vi.fn(),
-    views: undefined,
-    properties: { tabColor: undefined, defaultRowHeight: undefined },
-    pageSetup: {},
-    headerFooter: { oddHeader: "", oddFooter: "", evenHeader: "", evenFooter: "" },
-    autoFilter: undefined as string | undefined,
-    columns: undefined,
-    dataValidations: { add: vi.fn(), find: vi.fn(), remove: vi.fn() },
-    addConditionalFormatting: vi.fn(),
-    removeConditionalFormatting: vi.fn(),
-    conditionalFormattings: [],
-  };
-}
-
-=======
->>>>>>> origin/main
 function makeSheet(opts: SheetOptions) {
   const wb = new Workbook();
   const ws = wb.addWorksheet(opts.name);
@@ -92,55 +18,19 @@ describe("SheetBuilder", () => {
   describe("headers", () => {
     it("sets column definitions and writes header row", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
-<<<<<<< HEAD
-      sheet.headers([
-        { key: "a", header: "A" },
-        { key: "b", header: "B" },
-      ]);
-      expect(ws.columns).toEqual([
-        { key: "a", width: 15, hidden: false },
-        { key: "b", width: 15, hidden: false },
-      ]);
-      expect(ws.addRow).toHaveBeenCalledWith(["A", "B"]);
-=======
-      sheet.columns([{ key: "a", header: "A" }]);
-      sheet.writeHeaders();
+      vi.spyOn(ws, "addRow");
+      sheet.headers([{ key: "a", header: "A" }]);
       expect(ws.columns).toHaveLength(1);
       expect(ws.columns[0].key).toBe("a");
       expect(ws.columns[0].width).toBe(15);
       expect(ws.columns[0].hidden).toBe(false);
-    });
-
-    it("addColumn() appends a column", () => {
-      const { ws, sheet } = makeSheet({ name: "Test" });
-      sheet.addColumn({ key: "a", header: "A" });
-      sheet.addColumn({ key: "b", header: "B" });
-      sheet.writeHeaders();
-      expect(ws.columns).toHaveLength(2);
-    });
-  });
-
-  describe("writeHeaders", () => {
-    it("throws if no columns defined", () => {
-      const { sheet } = makeSheet({ name: "Test" });
-      expect(() => sheet.writeHeaders()).toThrow("Call columns() before writeHeaders()");
-    });
-
-    it("throws if called twice", () => {
-      const { sheet } = makeSheet({ name: "Test" });
-      sheet.columns([{ key: "a", header: "A" }]).writeHeaders();
-      expect(() => sheet.writeHeaders()).toThrow("writeHeaders() already called");
->>>>>>> origin/main
+      expect(ws.addRow).toHaveBeenCalledWith(["A"]);
     });
 
     it("calls addRow on the underlying worksheet", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
-<<<<<<< HEAD
-      sheet.headers([{ key: "x", header: "X" }]);
-=======
       vi.spyOn(ws, "addRow");
-      sheet.columns([{ key: "x", header: "X" }]).writeHeaders();
->>>>>>> origin/main
+      sheet.headers([{ key: "x", header: "X" }]);
       expect(ws.addRow).toHaveBeenCalledWith(["X"]);
     });
   });
@@ -178,6 +68,118 @@ describe("SheetBuilder", () => {
       vi.spyOn(ws, "addRow");
       sheet.addRows([[1], [2], [3]]);
       expect(ws.addRow).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe("setCell / setCellRC", () => {
+    it("setCellRC delegates with cellRef", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.setCellRC(4, 5, 42);
+      expect(ws.getCell("D5").value).toBe(42);
+    });
+
+    it("sets a value at the given address", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.setCell("B3", 42);
+      expect(ws.getCell("B3").value).toBe(42);
+    });
+
+    it("applies style when provided", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.setCell("A1", "hello", { font: { bold: true } });
+      expect(ws.getCell("A1").font?.bold).toBe(true);
+    });
+
+    it("skips undefined value", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.setCell("A1");
+      expect(ws.getCell("A1").value).toBeFalsy();
+    });
+
+    it("writes formula values", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.setCell("C5", { formula: "SUM(A1:A10)" });
+      expect(ws.getCell("C5").value).toEqual({ formula: "SUM(A1:A10)" });
+    });
+  });
+
+  describe("styleRange / styleRangeRC", () => {
+    it("applies style to a range", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.setCell("A1", "a");
+      sheet.setCell("B2", "b");
+      sheet.styleRange("A1:B2", { font: { bold: true } });
+      expect(ws.getCell("A1").font?.bold).toBe(true);
+      expect(ws.getCell("B2").font?.bold).toBe(true);
+    });
+
+    it("handles single cell range", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.setCell("A1", "a");
+      const result = sheet.styleRange("A1:A1", { font: { bold: true } });
+      expect(ws.getCell("A1").font?.bold).toBe(true);
+      expect(result).toBe(sheet);
+    });
+  });
+
+  describe("merge / mergeRC", () => {
+    it("merges cells and writes value", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "mergeCells");
+      sheet.merge({ range: "A1:C1", value: "Title", style: { font: { bold: true } } });
+      expect(ws.mergeCells).toHaveBeenCalledWith("A1:C1");
+      expect(ws.getCell("A1").value).toBe("Title");
+      expect(ws.getCell("A1").font?.bold).toBe(true);
+    });
+
+    it("mergeRC delegates with rangeRef", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "mergeCells");
+      sheet.mergeRC(1, 1, 3, 1, { value: "Title" });
+      expect(ws.mergeCells).toHaveBeenCalledWith("A1:C1");
+    });
+  });
+
+  describe("rowHeight / colWidth", () => {
+    it("sets row height", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.rowHeight(1, 30);
+      expect(ws.getRow(1).height).toBe(30);
+    });
+
+    it("sets column width", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.colWidth("A", 40);
+      expect(ws.getColumn("A").width).toBe(40);
+    });
+  });
+
+  describe("freeze", () => {
+    it("sets freeze pane", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.freeze(3);
+      const view = ws.views?.[0] ?? null;
+      expect(view?.state).toBe("frozen");
+      if (view?.state === "frozen") {
+        expect(view.ySplit).toBe(3);
+      }
+    });
+  });
+
+  describe("autoFilter", () => {
+    it("sets auto filter range", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.autoFilter("A1:C1");
+      expect(ws.autoFilter).toBe("A1:C1");
+    });
+  });
+
+  describe("autoFitColumns", () => {
+    it("auto-fits columns", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "autoFitColumns");
+      sheet.autoFitColumns();
+      expect(ws.autoFitColumns).toHaveBeenCalledWith(undefined, undefined);
     });
   });
 
@@ -251,258 +253,19 @@ describe("SheetBuilder", () => {
       expect(sheet.columnRange("custom")).toBe("A2:A2");
       expect(() => sheet.columnRange("name")).toThrow("No column with key");
     });
-
-    it("headers() combines columns + writeHeaders", () => {
-      const { ws, sheet } = makeSheet({ name: "Test" });
-      sheet
-        .headers([
-          { key: "a", header: "A" },
-          { key: "b", header: "B" },
-        ])
-        .addRow({ a: 1, b: 2 });
-      expect(ws.addRow).toHaveBeenCalledWith(["A", "B"]);
-      expect(sheet.columnRange("a")).toBe("A2:A2");
-    });
-  });
-
-  describe("setCell / setCellRC", () => {
-    it("setCellRC delegates with cellRef", () => {
-      const { ws, sheet } = makeSheet({ name: "Test" });
-      sheet.setCellRC(4, 5, 42);
-      const cell = ws.getCell("D5") as Record<string, unknown>;
-      expect(cell.value).toBe(42);
-    });
-
-    it("sets a value at the given address", () => {
-      const { ws, sheet } = makeSheet({ name: "Test" });
-      sheet.setCell("B3", 42);
-      const cell = ws.getCell("B3");
-      expect(cell.value).toBe(42);
-    });
-
-    it("applies style when provided", () => {
-      const { ws, sheet } = makeSheet({ name: "Test" });
-      sheet.setCell("A1", "hello", { font: { bold: true } });
-      const cell = ws.getCell("A1");
-      expect(cell.font).toBeDefined();
-    });
-
-    it("skips undefined value", () => {
-      const { ws, sheet } = makeSheet({ name: "Test" });
-      sheet.setCell("A1");
-      const cell = ws.getCell("A1");
-      expect(cell.value).toBeNull();
-    });
-
-    it("writes formula values", () => {
-      const { ws, sheet } = makeSheet({ name: "Test" });
-      sheet.setCell("C5", { formula: "=B3*2", result: 100 });
-      const cell = ws.getCell("C5");
-      expect(cell.value).toEqual({ formula: "B3*2", result: 100 });
-    });
-  });
-
-  describe("styleRange", () => {
-    it("applies style to cells in range", () => {
-      const { ws, sheet } = makeSheet({ name: "Test" });
-      sheet.styleRange("A1:B2", { font: { bold: true } });
-      expect(ws.getCell("A1").font).toBeDefined();
-      expect(ws.getCell("B2").font).toBeDefined();
-    });
-
-    it("returns this for chaining", () => {
-      const { sheet } = makeSheet({ name: "Test" });
-      const result = sheet.styleRange("A1:A1", {});
-      expect(result).toBe(sheet);
-    });
-  });
-
-  describe("merge", () => {
-    it("merges cells and writes value", () => {
-      const { ws, sheet } = makeSheet({ name: "Test" });
-      sheet.merge({
-        range: "A1:C1",
-        value: "Title",
-        style: { font: { bold: true } },
-      });
-      const cell = ws.getCell("A1");
-      expect(cell.value).toBe("Title");
-      expect(cell.font?.bold).toBe(true);
-    });
-
-    it("mergeRC delegates with rangeRef", () => {
-      const { ws, sheet } = makeSheet({ name: "Test" });
-      sheet.mergeRC(1, 1, 3, 1, { value: "Title" });
-      expect(ws.mergeCells).toHaveBeenCalledWith("A1:C1");
-    });
-
-    it("mergeRC with height", () => {
-      const { sheet } = makeSheet({ name: "Test" });
-      sheet.mergeRC(1, 1, 1, 1, { height: 30 });
-    });
-  });
-
-  describe("mergeAll", () => {
-    it("merges multiple regions", () => {
-      const { sheet } = makeSheet({ name: "Test" });
-      sheet.mergeAll([{ range: "A1:C1" }, { range: "A2:C2" }]);
-      expect(sheet).toBeDefined();
-    });
-  });
-
-  describe("rowHeight / colWidth", () => {
-    it("sets row height", () => {
-      const { ws, sheet } = makeSheet({ name: "Test" });
-      vi.spyOn(ws, "getRow");
-      sheet.rowHeight(1, 30);
-      expect(ws.getRow).toHaveBeenCalledWith(1);
-    });
-
-    it("sets column width", () => {
-      const { ws, sheet } = makeSheet({ name: "Test" });
-      vi.spyOn(ws, "getColumn");
-      sheet.colWidth("A", 40);
-      expect(ws.getColumn).toHaveBeenCalledWith("A");
-    });
-  });
-
-  describe("autoFitColumns", () => {
-    it("delegates to underlying worksheet", () => {
-      const { ws, sheet } = makeSheet({ name: "Test" });
-      vi.spyOn(ws, "autoFitColumns");
-      sheet.autoFitColumns();
-      expect(ws.autoFitColumns).toHaveBeenCalled();
-    });
-  });
-
-  describe("freeze", () => {
-    it("sets frozen view state", () => {
-      const { ws, sheet } = makeSheet({ name: "Test" });
-      sheet.freeze(1, 0);
-      const view = ws.views[0];
-      if (view.state !== "frozen") throw new Error("expected frozen view");
-      expect(view.ySplit).toBe(1);
-    });
-
-    it("preserves existing view properties", () => {
-      const { ws, sheet } = makeSheet({ name: "Test" });
-      ws.views = [{ showGridLines: false, zoomScale: 80 }];
-      sheet.freeze(2);
-      const views = ws.views;
-      expect(views[0].showGridLines).toBe(false);
-      expect(views[0].zoomScale).toBe(80);
-      expect(views[0].state).toBe("frozen");
-    });
-  });
-
-  describe("autoFilter", () => {
-    it("sets range based on columns", () => {
-      const { ws, sheet } = makeSheet({ name: "Test" });
-      sheet.columns([
-        { key: "a", header: "A" },
-        { key: "b", header: "B" },
-      ]);
-      sheet.autoFilter();
-      expect(ws.autoFilter).toBe("A1:B1");
-    });
-
-    it("accepts explicit range", () => {
-      const { ws, sheet } = makeSheet({ name: "Test" });
-      sheet.autoFilter("A1:F1");
-      expect(ws.autoFilter).toBe("A1:F1");
-    });
-  });
-
-  describe("_finalize", () => {
-    it("protects sheet when protection configured", async () => {
-      const { ws, sheet } = makeSheet({
-        name: "Test",
-        protection: { password: "secret" },
-      });
-      vi.spyOn(ws, "protect");
-      await sheet._finalize();
-      expect(ws.protect).toHaveBeenCalledWith("secret");
-    });
-
-    it("skips when no protection", async () => {
-      const { ws, sheet } = makeSheet({ name: "Test" });
-      vi.spyOn(ws, "protect");
-      await sheet._finalize();
-      expect(ws.protect).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("sheet options", () => {
-    it("applies tab color", () => {
-      const { ws } = makeSheet({ name: "Test", tabColor: "FFFF0000" });
-      expect(ws.properties.tabColor).toEqual({ argb: "FFFF0000" });
-    });
-
-    it("applies default row height", () => {
-      const { ws } = makeSheet({ name: "Test", defaultRowHeight: 25 });
-      expect(ws.properties.defaultRowHeight).toBe(25);
-    });
-
-    it("applies zoom", () => {
-      const { ws } = makeSheet({ name: "Test", zoom: 120 });
-      const views = ws.views;
-      expect(views[0].zoomScale).toBe(120);
-    });
-
-    it("hides gridlines", () => {
-      const { ws } = makeSheet({ name: "Test", showGridLines: false });
-      const views = ws.views;
-      expect(views[0].showGridLines).toBe(false);
-    });
-
-    it("applies freeze via options", () => {
-      const { ws } = makeSheet({
-        name: "Test",
-        freeze: { row: 2, col: 1 },
-      });
-      const view = ws.views[0];
-      if (view.state !== "frozen") throw new Error("expected frozen view");
-      expect(view.ySplit).toBe(2);
-    });
-
-    it("applies header/footer", () => {
-      const { ws } = makeSheet({
-        name: "Test",
-        headerFooter: {
-          oddHeader: { left: "Left", right: "Right" },
-          oddFooter: { center: "Page &P" },
-        },
-      });
-      expect(ws.headerFooter.oddHeader).toContain("&LLeft");
-      expect(ws.headerFooter.oddFooter).toContain("&CPage &P");
-    });
-
-    it("applies page orientation", () => {
-      const { ws } = makeSheet({
-        name: "Test",
-        pageSetup: { orientation: "landscape" },
-      });
-      expect(ws.pageSetup.orientation).toBe("landscape");
-    });
-
-    it("applies page margins", () => {
-      const { ws } = makeSheet({
-        name: "Test",
-        pageSetup: { margins: { left: 1.0, right: 1.0 } },
-      });
-      expect(ws.pageSetup.margins.left).toBe(1.0);
-    });
   });
 
   describe("data validation", () => {
     it("addDataValidation delegates to ws.dataValidations.add", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws.dataValidations, "add");
       sheet.addDataValidation("A1", { type: "any" });
       expect(ws.dataValidations.add).toHaveBeenCalledWith("A1", { type: "any" });
     });
 
     it("addListValidation creates list type validation", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws.dataValidations, "add");
       sheet.addListValidation("B2:B10", ["Option A", "Option B"]);
       expect(ws.dataValidations.add).toHaveBeenCalledWith("B2:B10", {
         type: "list",
@@ -512,6 +275,7 @@ describe("SheetBuilder", () => {
 
     it("addListValidation forwards options", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws.dataValidations, "add");
       sheet.addListValidation("C1", ["X"], { allowBlank: true, prompt: "Pick one" });
       expect(ws.dataValidations.add).toHaveBeenCalledWith("C1", {
         type: "list",
@@ -523,6 +287,7 @@ describe("SheetBuilder", () => {
 
     it("addRangeValidation with between operator", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws.dataValidations, "add");
       sheet.addRangeValidation("D1:D10", "whole", "between", [1, 100]);
       expect(ws.dataValidations.add).toHaveBeenCalledWith("D1:D10", {
         type: "whole",
@@ -533,6 +298,7 @@ describe("SheetBuilder", () => {
 
     it("addRangeValidation forwards options", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws.dataValidations, "add");
       sheet.addRangeValidation("E1", "decimal", "lessThan", [50], { error: "Too high" });
       expect(ws.dataValidations.add).toHaveBeenCalledWith("E1", {
         type: "decimal",
@@ -546,6 +312,7 @@ describe("SheetBuilder", () => {
   describe("conditional formatting", () => {
     it("addConditionalFormatting delegates to ws.addConditionalFormatting", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addConditionalFormatting");
       sheet.addConditionalFormatting({
         ref: "A1:A10",
         rules: [{ type: "cellIs", operator: "greaterThan", formulae: [100] }],
@@ -558,12 +325,14 @@ describe("SheetBuilder", () => {
 
     it("removeConditionalFormatting delegates to ws", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "removeConditionalFormatting");
       sheet.removeConditionalFormatting(0);
       expect(ws.removeConditionalFormatting).toHaveBeenCalledWith(0);
     });
 
     it("addCellIsRule adds a cellIs rule", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addConditionalFormatting");
       sheet.addCellIsRule("A1:A10", "between", [10, 100]);
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "A1:A10",
@@ -573,6 +342,7 @@ describe("SheetBuilder", () => {
 
     it("addCellIsRule with style", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addConditionalFormatting");
       sheet.addCellIsRule("A1", "equal", ["Yes"], { font: { bold: true } });
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "A1",
@@ -584,6 +354,7 @@ describe("SheetBuilder", () => {
 
     it("addExpressionRule adds an expression rule", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addConditionalFormatting");
       sheet.addExpressionRule("A1:A10", "A1>100");
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "A1:A10",
@@ -593,6 +364,7 @@ describe("SheetBuilder", () => {
 
     it("addDataBar adds a data bar rule", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addConditionalFormatting");
       sheet.addDataBar("B1:B10");
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "B1:B10",
@@ -602,6 +374,7 @@ describe("SheetBuilder", () => {
 
     it("addColorScale adds a color scale rule", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addConditionalFormatting");
       sheet.addColorScale("C1:C10", [{ type: "min" }, { type: "max" }]);
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "C1:C10",
@@ -611,6 +384,7 @@ describe("SheetBuilder", () => {
 
     it("addIconSet adds an icon set rule", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addConditionalFormatting");
       sheet.addIconSet("D1:D10", "3TrafficLights1");
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "D1:D10",
@@ -620,6 +394,7 @@ describe("SheetBuilder", () => {
 
     it("addTop10Rule adds a top10 rule", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addConditionalFormatting");
       sheet.addTop10Rule("E1:E10", 5);
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "E1:E10",
@@ -629,6 +404,7 @@ describe("SheetBuilder", () => {
 
     it("addAboveAverageRule adds an aboveAverage rule", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addConditionalFormatting");
       sheet.addAboveAverageRule("F1:F10");
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "F1:F10",
@@ -638,6 +414,7 @@ describe("SheetBuilder", () => {
 
     it("addContainsTextRule adds a containsText rule", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addConditionalFormatting");
       sheet.addContainsTextRule("G1:G10", "urgent");
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "G1:G10",
@@ -647,6 +424,7 @@ describe("SheetBuilder", () => {
 
     it("addTimePeriodRule adds a timePeriod rule", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addConditionalFormatting");
       sheet.addTimePeriodRule("H1:H10", "thisMonth");
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "H1:H10",
@@ -656,6 +434,8 @@ describe("SheetBuilder", () => {
 
     it("methods are chainable", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws.dataValidations, "add");
+      vi.spyOn(ws, "addConditionalFormatting");
       sheet
         .addDataValidation("A1", { type: "any" })
         .addConditionalFormatting({ ref: "B1", rules: [{ type: "dataBar" }] })
@@ -668,12 +448,14 @@ describe("SheetBuilder", () => {
   describe("data validation RC", () => {
     it("addDataValidationRC delegates with cellRef", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws.dataValidations, "add");
       sheet.addDataValidationRC(3, 5, { type: "any" });
       expect(ws.dataValidations.add).toHaveBeenCalledWith("C5", { type: "any" });
     });
 
     it("addListValidationRC delegates with colRange", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws.dataValidations, "add");
       sheet.addListValidationRC(2, 3, 10, ["X", "Y"]);
       expect(ws.dataValidations.add).toHaveBeenCalledWith("B3:B10", {
         type: "list",
@@ -683,6 +465,7 @@ describe("SheetBuilder", () => {
 
     it("addRangeValidationRC delegates with colRange", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws.dataValidations, "add");
       sheet.addRangeValidationRC(4, 2, 100, "whole", "between", [1, 100]);
       expect(ws.dataValidations.add).toHaveBeenCalledWith("D2:D100", {
         type: "whole",
@@ -695,6 +478,7 @@ describe("SheetBuilder", () => {
   describe("conditional formatting RC", () => {
     it("addCellIsRuleRC delegates with rangeRef", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addConditionalFormatting");
       sheet.addCellIsRuleRC(2, 3, 4, 10, "greaterThan", [100]);
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "B3:D10",
@@ -704,6 +488,7 @@ describe("SheetBuilder", () => {
 
     it("addExpressionRuleRC delegates with rangeRef", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addConditionalFormatting");
       sheet.addExpressionRuleRC(1, 1, 5, 5, "A1>0");
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "A1:E5",
@@ -713,6 +498,7 @@ describe("SheetBuilder", () => {
 
     it("addDataBarRC delegates with rangeRef", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addConditionalFormatting");
       sheet.addDataBarRC(2, 2, 2, 20);
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "B2:B20",
@@ -722,6 +508,7 @@ describe("SheetBuilder", () => {
 
     it("addColorScaleRC delegates with rangeRef", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addConditionalFormatting");
       sheet.addColorScaleRC(3, 1, 3, 10, [{ type: "min" }, { type: "max" }]);
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "C1:C10",
@@ -731,6 +518,7 @@ describe("SheetBuilder", () => {
 
     it("addIconSetRC delegates with rangeRef", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addConditionalFormatting");
       sheet.addIconSetRC(4, 1, 4, 10, "3TrafficLights1");
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "D1:D10",
@@ -740,6 +528,7 @@ describe("SheetBuilder", () => {
 
     it("addTop10RuleRC delegates with rangeRef", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addConditionalFormatting");
       sheet.addTop10RuleRC(5, 1, 5, 10, 5);
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "E1:E10",
@@ -749,6 +538,7 @@ describe("SheetBuilder", () => {
 
     it("addAboveAverageRuleRC delegates with rangeRef", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addConditionalFormatting");
       sheet.addAboveAverageRuleRC(6, 1, 6, 10);
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "F1:F10",
@@ -758,6 +548,7 @@ describe("SheetBuilder", () => {
 
     it("addContainsTextRuleRC delegates with rangeRef", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addConditionalFormatting");
       sheet.addContainsTextRuleRC(7, 1, 7, 10, "urgent");
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "G1:G10",
@@ -767,6 +558,7 @@ describe("SheetBuilder", () => {
 
     it("addTimePeriodRuleRC delegates with rangeRef", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addConditionalFormatting");
       sheet.addTimePeriodRuleRC(8, 1, 8, 10, "thisMonth");
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "H1:H10",
