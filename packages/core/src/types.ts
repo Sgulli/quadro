@@ -9,12 +9,7 @@ export type HorizontalAlignment =
   | "centerContinuous"
   | "distributed";
 
-export type VerticalAlignment =
-  | "top"
-  | "middle"
-  | "bottom"
-  | "distributed"
-  | "justify";
+export type VerticalAlignment = "top" | "middle" | "bottom" | "distributed" | "justify";
 
 export interface Alignment {
   horizontal?: HorizontalAlignment;
@@ -78,12 +73,7 @@ export interface Font {
   size?: number;
   bold?: boolean;
   italic?: boolean;
-  underline?:
-    | boolean
-    | "single"
-    | "double"
-    | "singleAccounting"
-    | "doubleAccounting";
+  underline?: boolean | "single" | "double" | "singleAccounting" | "doubleAccounting";
   strike?: boolean;
   color?: string; // hex ARGB
   vertAlign?: "superscript" | "subscript";
@@ -246,9 +236,12 @@ export interface WorkbookOptions {
   /**
    * Stream mode: write directly to a file path.
    * When set, the workbook operates in streaming mode for
+
    * memory-efficient output of large datasets.
    */
   useStreaming?: boolean;
+  /** Base directory for output path containment (prevents path traversal) */
+  allowedBase?: string;
 }
 
 // ─── Builder Return Types ────────────────────────────────────────────────────

@@ -1,22 +1,7 @@
-/**
- * example.ts
- *
- * Showcases every feature of the excel-wrapper:
- *   - Multiple sheets
- *   - Merged cells & section headers
- *   - Column definitions with per-column styles
- *   - Formulas (SUM, AVERAGE, IF, nested)
- *   - Preset & custom styles
- *   - Freeze panes + auto-filter
- *   - Page setup & header/footer
- *   - Streaming (memory-safe) write
- */
-
-import path from "path";
-import { WorkbookBuilder, Styles, F } from "../src/index";
-import type { CellStyle, ColumnDef } from "../src/index";
-
-// ─── Custom styles ────────────────────────────────────────────────────────────
+import path from "node:path";
+import type { CellStyle, ColumnDef, WriteResult } from "@quadro/core";
+import { F, Styles, WorkbookBuilder } from "@quadro/core";
+import { defineCommand } from "citty";
 
 const sectionTitle: CellStyle = {
   font: { bold: true, size: 13, color: "FF1F497D", name: "Arial" },
@@ -36,8 +21,6 @@ const highlight: CellStyle = {
   font: { bold: true, color: "FF9C0006" },
   fill: { type: "solid", color: "FFFFC7CE" },
 };
-
-// ─── Sheet 1: Sales Report ────────────────────────────────────────────────────
 
 const salesColumns: ColumnDef[] = [
   { key: "region", header: "Region", width: 20, headerStyle: Styles.header },
@@ -95,14 +78,7 @@ const salesData = [
     q3: 142_000,
     q4: 158_000,
   },
-  {
-    region: "EMEA",
-    product: "SMB Package",
-    q1: 48_000,
-    q2: 51_000,
-    q3: 49_500,
-    q4: 53_000,
-  },
+  { region: "EMEA", product: "SMB Package", q1: 48_000, q2: 51_000, q3: 49_500, q4: 53_000 },
   {
     region: "APAC",
     product: "Enterprise Suite",
@@ -111,14 +87,7 @@ const salesData = [
     q3: 117_500,
     q4: 122_000,
   },
-  {
-    region: "APAC",
-    product: "SMB Package",
-    q1: 32_000,
-    q2: 35_500,
-    q3: 37_000,
-    q4: 39_200,
-  },
+  { region: "APAC", product: "SMB Package", q1: 32_000, q2: 35_500, q3: 37_000, q4: 39_200 },
   {
     region: "AMER",
     product: "Enterprise Suite",
@@ -127,25 +96,11 @@ const salesData = [
     q3: 241_500,
     q4: 260_000,
   },
-  {
-    region: "AMER",
-    product: "SMB Package",
-    q1: 72_000,
-    q2: 78_000,
-    q3: 81_000,
-    q4: 88_500,
-  },
+  { region: "AMER", product: "SMB Package", q1: 72_000, q2: 78_000, q3: 81_000, q4: 88_500 },
 ];
 
-// ─── Sheet 2: KPI Dashboard ───────────────────────────────────────────────────
-
 const kpiColumns: ColumnDef[] = [
-  {
-    key: "metric",
-    header: "KPI Metric",
-    width: 28,
-    headerStyle: Styles.header,
-  },
+  { key: "metric", header: "KPI Metric", width: 28, headerStyle: Styles.header },
   {
     key: "target",
     header: "Target",
@@ -177,67 +132,46 @@ const kpiColumns: ColumnDef[] = [
   { key: "status", header: "Status", width: 12, headerStyle: Styles.header },
 ];
 
-// ─── Sheet 3: Formulas showcase ───────────────────────────────────────────────
-
 const formulaColumns: ColumnDef[] = [
-  {
-    key: "label",
-    header: "Description",
-    width: 32,
-    headerStyle: Styles.header,
-  },
-  {
-    key: "value",
-    header: "Value",
-    width: 20,
-    style: Styles.currency,
-    headerStyle: Styles.header,
-  },
+  { key: "label", header: "Description", width: 32, headerStyle: Styles.header },
+  { key: "value", header: "Value", width: 20, style: Styles.currency, headerStyle: Styles.header },
   { key: "note", header: "Note", width: 40, headerStyle: Styles.header },
 ];
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
+export interface ExampleOptions {
+  outputDir?: string;
+}
 
-async function main() {
-  const outputPath = path.join(process.cwd(), "output", "demo-report.xlsx");
+export async function handler(options: ExampleOptions = {}): Promise<WriteResult> {
+  const outputPath = path.join(options.outputDir ?? process.cwd(), "output", "demo-report.xlsx");
 
-  await new WorkbookBuilder({
-    author: "Excel Wrapper Demo",
-    company: "Acme Corp",
+  return new WorkbookBuilder({
+    author: "Quadro CLI",
+    company: "Quadro Demo",
     useSharedStrings: true,
   })
-
-    // ── Sheet 1: Sales ───────────────────────────────────────────────────────
     .addSheet(
       {
         name: "Sales Report",
         tabColor: "FF2B579A",
-        freeze: { row: 3 }, // freeze above the data rows (title + header)
+        freeze: { row: 3 },
         pageSetup: {
-          paperSize: 9, // A4
+          paperSize: 9,
           orientation: "landscape",
           fitToPage: true,
           fitToWidth: 1,
         },
         headerFooter: {
-          oddHeader: { left: "Acme Corp — Confidential", right: "&D" },
+          oddHeader: { left: "Quadro — Demo Report", right: "&D" },
           oddFooter: { center: "Page &P of &N" },
         },
       },
       (sheet) => {
-        // Row 1: merged title bar
-        sheet.merge({
-          range: "A1:H1",
-          value: "2024 Annual Sales Report",
-          style: sectionTitle,
-        });
+        sheet.merge({ range: "A1:H1", value: "2024 Annual Sales Report", style: sectionTitle });
         sheet.rowHeight(1, 32);
-
-        // Row 2: column headers
         sheet.columns(salesColumns).writeHeaders();
         sheet.rowHeight(2, 22);
 
-        // Data rows with alternating background
         salesData.forEach((row, i) => {
           const r = i + 3;
           sheet.addRow(
@@ -252,7 +186,6 @@ async function main() {
 
         const lastDataRow = salesData.length + 2;
         const totalsRow = lastDataRow + 1;
-
         sheet.addRow(
           {
             region: "GRAND TOTAL",
@@ -266,35 +199,24 @@ async function main() {
           },
           { style: Styles.totalRow, height: 20 },
         );
-
         sheet.autoFilter("A2:H2");
       },
     )
-
-    // ── Sheet 2: KPI Dashboard ───────────────────────────────────────────────
     .addSheet(
       {
         name: "KPI Dashboard",
         tabColor: "FF70AD47",
-        freeze: { row: 4 }, // title + section header + column header
+        freeze: { row: 4 },
       },
       (sheet) => {
-        // Title merge
-        sheet.merge({
-          range: "A1:F1",
-          value: "Q4 2024 — KPI Dashboard",
-          style: sectionTitle,
-        });
+        sheet.merge({ range: "A1:F1", value: "Q4 2024 — KPI Dashboard", style: sectionTitle });
         sheet.rowHeight(1, 36);
-
-        // Sub-title merge
         sheet.merge({
           range: "A2:F2",
           value: "Revenue & Pipeline Metrics",
           style: Styles.subHeader,
         });
         sheet.rowHeight(2, 20);
-
         sheet.columns(kpiColumns).writeHeaders();
 
         const kpiRows = [
@@ -303,11 +225,7 @@ async function main() {
           { metric: "Gross Revenue", target: 6_000_000, actual: 6_218_000 },
           { metric: "Net Revenue", target: 5_400_000, actual: 5_580_000 },
           { metric: "Churn (negative)", target: -240_000, actual: -198_000 },
-          {
-            metric: "Pipeline Generated",
-            target: 18_000_000,
-            actual: 17_200_000,
-          },
+          { metric: "Pipeline Generated", target: 18_000_000, actual: 17_200_000 },
         ];
 
         kpiRows.forEach((kpi, i) => {
@@ -318,12 +236,11 @@ async function main() {
             actual: kpi.actual,
             variance: F.sub(F.ref("C", r), F.ref("B", r)),
             pct: F.div(F.ref("C", r), F.ref("B", r)),
-            status: F.if(`${F.ref("C", r)}/${F.ref("B", r)}>=1`, "✅ On Track", "⚠️ At Risk"),
+            status: F.if(`${F.ref("C", r)}/${F.ref("B", r)}>=1`, "On Track", "At Risk"),
           });
         });
 
         sheet.styleRange("D5:D9", { ...Styles.boxBorder });
-
         const lastKpi = kpiRows.length + 3;
         sheet.addRow(
           {
@@ -336,38 +253,25 @@ async function main() {
           },
           { style: Styles.totalRow },
         );
-
         sheet.autoFitColumns();
       },
     )
-
-    // ── Sheet 3: Formula Reference ────────────────────────────────────────────
     .addSheet(
       {
         name: "Formula Reference",
         tabColor: "FFED7D31",
       },
       (sheet) => {
-        sheet.merge({
-          range: "A1:C1",
-          value: "Excel Formula Examples",
-          style: sectionTitle,
-        });
+        sheet.merge({ range: "A1:C1", value: "Excel Formula Examples", style: sectionTitle });
         sheet.rowHeight(1, 30);
-
         sheet.columns(formulaColumns).writeHeaders();
 
-        // Seed values for formula demo
         sheet.setCell("B3", 50_000, Styles.inputCell);
         sheet.setCell("B4", 75_000, Styles.inputCell);
         sheet.setCell("B5", 92_000, Styles.inputCell);
 
         sheet.addRow(
-          {
-            label: "Base Value A",
-            value: 50_000,
-            note: "Hardcoded input (blue = user-editable)",
-          },
+          { label: "Base Value A", value: 50_000, note: "Hardcoded input" },
           { style: { font: { color: "FF0000FF" } } },
         );
         sheet.addRow(
@@ -378,37 +282,17 @@ async function main() {
           { label: "Base Value C", value: 92_000, note: "Hardcoded input" },
           { style: { font: { color: "FF0000FF" } } },
         );
-        sheet.addRow({
-          label: "SUM(A+B+C)",
-          value: F.sum("B3:B5", 217_000),
-          note: "=SUM(B3:B5)",
-        });
+        sheet.addRow({ label: "SUM(A+B+C)", value: F.sum("B3:B5", 217_000), note: "=SUM(B3:B5)" });
         sheet.addRow({
           label: "AVERAGE",
           value: F.average("B3:B5", 72_333),
           note: "=AVERAGE(B3:B5)",
         });
-        sheet.addRow({
-          label: "MAX",
-          value: F.max("B3:B5", 92_000),
-          note: "=MAX(B3:B5)",
-        });
-        sheet.addRow({
-          label: "MIN",
-          value: F.min("B3:B5", 50_000),
-          note: "=MIN(B3:B5)",
-        });
-        sheet.addRow({
-          label: "COUNT",
-          value: F.count("B3:B5", 3),
-          note: "=COUNT(B3:B5)",
-        });
+        sheet.addRow({ label: "MAX", value: F.max("B3:B5", 92_000), note: "=MAX(B3:B5)" });
+        sheet.addRow({ label: "MIN", value: F.min("B3:B5", 50_000), note: "=MIN(B3:B5)" });
+        sheet.addRow({ label: "COUNT", value: F.count("B3:B5", 3), note: "=COUNT(B3:B5)" });
         sheet.addRow(
-          {
-            label: "YoY Growth %",
-            value: F.pct("B5", "B3"),
-            note: "=(B5−B3)/B3 — shows as %",
-          },
+          { label: "YoY Growth %", value: F.pct("B5", "B3"), note: "=(B5-B3)/B3" },
           { style: Styles.percent },
         );
         sheet.addRow({
@@ -417,41 +301,34 @@ async function main() {
           note: "Conditional text",
         });
 
-        // Section separator via merged cell
-        sheet.merge({
-          range: "A13:C13",
-          value: "Merge & Style Examples",
-          style: Styles.subHeader,
-        });
+        sheet.merge({ range: "A13:C13", value: "Merge & Style Examples", style: Styles.subHeader });
         sheet.merge({
           range: "A14:B14",
           value: "This cell spans two columns",
           style: { ...Styles.boxBorder, alignment: { horizontal: "center" } },
         });
-        sheet.setCell("C14", "← merged A14:B14", {
-          font: { italic: true, color: "FF595959" },
-        });
-        sheet.merge({
-          range: "A15:C15",
-          value: "Full-width highlight",
-          style: highlight,
-        });
-
+        sheet.setCell("C14", "merged A14:B14", { font: { italic: true, color: "FF595959" } });
+        sheet.merge({ range: "A15:C15", value: "Full-width highlight", style: highlight });
         sheet.autoFitColumns();
       },
     )
-
-    // ── Write ─────────────────────────────────────────────────────────────────
-    .write(outputPath)
-    .then(({ filePath, sizeBytes }) => {
-      console.log(`✅  Workbook written to:  ${filePath}`);
-      console.log(
-        `    File size:            ${(sizeBytes / 1024).toFixed(1)} KB`,
-      );
-    });
+    .write(outputPath);
 }
 
-main().catch((err) => {
-  console.error("❌  Failed:", err);
-  process.exit(1);
+export const example = defineCommand({
+  meta: {
+    name: "example",
+    description: "Generate a demo multi-sheet workbook (demo-report.xlsx)",
+  },
+  run() {
+    handler()
+      .then(({ filePath, sizeBytes }) => {
+        console.log(`Workbook written to: ${filePath}`);
+        console.log(`File size: ${(sizeBytes / 1024).toFixed(1)} KB`);
+      })
+      .catch((err) => {
+        console.error("Failed:", err);
+        process.exit(1);
+      });
+  },
 });

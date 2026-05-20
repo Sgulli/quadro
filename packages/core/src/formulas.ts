@@ -8,7 +8,7 @@ function resolveCol(col: Ref): string {
 }
 
 function esc(v: string | number): string {
-  return typeof v === "string" ? `"${v}"` : String(v);
+  return typeof v === "string" ? `"${v.replace(/"/g, '""')}"` : String(v);
 }
 
 export function ref(col: Ref, row: number): string {
@@ -20,12 +20,7 @@ export function range(col: Ref, fromRow: number, toRow: number): string {
   return `${c}${fromRow}:${c}${toRow}`;
 }
 
-export function rect(
-  fromCol: Ref,
-  fromRow: number,
-  toCol: Ref,
-  toRow: number,
-): string {
+export function rect(fromCol: Ref, fromRow: number, toCol: Ref, toRow: number): string {
   return `${resolveCol(fromCol)}${fromRow}:${resolveCol(toCol)}${toRow}`;
 }
 
@@ -62,16 +57,10 @@ export function mul(a: string | number, b: string | number): FormulaValue {
 }
 
 export function div(a: string | number, b: string | number): FormulaValue {
-  if (Number.parseFloat(b.toString()) === 0) {
-    return { formula: `DIV0(${a},${b})` };
-  }
   return { formula: `${a}/${b}` };
 }
 
-export function pct(
-  current: string | number,
-  previous: string | number,
-): FormulaValue {
+export function pct(current: string | number, previous: string | number): FormulaValue {
   return { formula: `(${current}-${previous})/${previous}` };
 }
 
@@ -80,14 +69,9 @@ export function ifExpr(
   ifTrue: string | number | FormulaValue,
   ifFalse: string | number | FormulaValue,
 ): FormulaValue {
-  const thenVal =
-    typeof ifTrue === "object" && "formula" in ifTrue
-      ? ifTrue.formula
-      : esc(ifTrue);
+  const thenVal = typeof ifTrue === "object" && "formula" in ifTrue ? ifTrue.formula : esc(ifTrue);
   const elseVal =
-    typeof ifFalse === "object" && "formula" in ifFalse
-      ? ifFalse.formula
-      : esc(ifFalse);
+    typeof ifFalse === "object" && "formula" in ifFalse ? ifFalse.formula : esc(ifFalse);
   return { formula: `IF(${condition},${thenVal},${elseVal})` };
 }
 

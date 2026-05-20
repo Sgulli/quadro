@@ -36,64 +36,80 @@
 
 // ── Builders ────────────────────────────────────────────────────────────────
 
-export { WorkbookBuilder } from "./workbook-builder.js";
 export { SheetBuilder } from "./sheet-builder.js";
+export { WorkbookBuilder } from "./workbook-builder.js";
 
 // ── Formula helpers ───────────────────────────────────────────────────────────
 
-export { F, ref, range, rect, sum, average, count, max, min, add, sub, mul, div, pct, ifExpr } from "./formulas.js";
+export {
+  add,
+  average,
+  count,
+  div,
+  F,
+  ifExpr,
+  max,
+  min,
+  mul,
+  pct,
+  range,
+  rect,
+  ref,
+  sub,
+  sum,
+} from "./formulas.js";
 
 // ── Style utilities ──────────────────────────────────────────────────────────
 
 export {
+  accounting,
+  align,
+  applyStyle,
+  border,
+  colLetter,
+  currency,
+  fill,
+  font,
+  formatHeaderFooterSection,
+  numFmt,
+  resolveNumberFormat,
   Styles,
   style,
-  border,
-  align,
-  font,
-  fill,
-  numFmt,
-  currency,
-  accounting,
-  applyStyle,
-  formatHeaderFooterSection,
-  toExcelFont,
-  toExcelFill,
-  toExcelBorder,
   toExcelAlignment,
-  resolveNumberFormat,
-  colLetter,
+  toExcelBorder,
+  toExcelFill,
+  toExcelFont,
 } from "./utils.js";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export type {
-  // Cell value types
-  CellPrimitive,
-  CellValue,
-  FormulaValue,
-  // Style types
-  CellStyle,
-  Font,
-  Fill,
-  SolidFill,
-  GradientFill,
+  Alignment,
   Border,
   BorderSide,
   BorderStyle,
-  Alignment,
-  HorizontalAlignment,
-  VerticalAlignment,
-  NumberFormat,
   BuiltinFormat,
+  // Cell value types
+  CellPrimitive,
+  // Style types
+  CellStyle,
+  CellValue,
   // Column / row / sheet
   ColumnDef,
+  Fill,
+  Font,
+  FormulaValue,
+  GradientFill,
+  HeaderFooterSection,
+  HorizontalAlignment,
   MergeRange,
+  NumberFormat,
   RowData,
   RowOptions,
-  SheetOptions,
   SheetHeaderFooter,
-  HeaderFooterSection,
+  SheetOptions,
+  SolidFill,
+  VerticalAlignment,
   // Workbook
   WorkbookOptions,
   WriteResult,

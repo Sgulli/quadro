@@ -4,6 +4,7 @@ export default defineConfig([
   {
     input: "src/index.ts",
     external: ["@cj-tech-master/excelts", "node:fs", "node:path"],
+
     output: {
       format: "esm",
       dir: "dist/esm",
@@ -14,6 +15,7 @@ export default defineConfig([
   {
     input: "src/index.ts",
     external: ["@cj-tech-master/excelts", "node:fs", "node:path"],
+
     output: {
       format: "cjs",
       dir: "dist/cjs",

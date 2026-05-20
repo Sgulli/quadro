@@ -1,5 +1,14 @@
-import type { Worksheet, Row, Cell, CellFormulaValue, WorksheetView } from "@cj-tech-master/excelts";
-import { applyStyle, formatHeaderFooterSection, colLetter } from "./utils.js";
+import type {
+  AddAOAOptions,
+  AddJSONOptions,
+  CellFormulaValue,
+  Cell as ExcelCell,
+  CellValue as ExcelCellValue,
+  Row as ExcelRow,
+  Worksheet as ExcelWorksheet,
+  SheetToJSONOptions,
+  WorksheetView,
+} from "@cj-tech-master/excelts";
 import type {
   CellPrimitive,
   CellStyle,
@@ -10,62 +19,33 @@ import type {
   RowOptions,
   SheetOptions,
 } from "./types.js";
+import { applyStyle, colLetter, formatHeaderFooterSection } from "./utils.js";
 
-// ─── SheetBuilder ────────────────────────────────────────────────────────────
-
-/**
- * Fluent builder for a single worksheet.
- *
- * Obtain an instance via `WorkbookBuilder.addSheet()`.
- */
 export class SheetBuilder {
-  private readonly _ws: Worksheet;
+  private readonly _ws: ExcelWorksheet;
   private _columns: ColumnDef[] = [];
   private _headerWritten = false;
   private _protectionConfig?: { password?: string };
 
   /** @internal */
   constructor(
-    ws: Worksheet,
+    ws: ExcelWorksheet,
     private readonly _opts: SheetOptions,
   ) {
     this._ws = ws;
     this._applySheetOptions();
   }
 
-  // ── Column API ─────────────────────────────────────────────────────────────
-
-  /**
-   * Define all columns at once. Replaces any previously set columns.
-   *
-   * @example
-   * sheet.columns([
-   *   { key: "name",  header: "Name",   width: 25, headerStyle: Styles.header },
-   *   { key: "sales", header: "Sales",  width: 15, style: Styles.currency },
-   * ])
-   */
   columns(defs: ColumnDef[]): this {
     this._columns = defs;
     return this;
   }
 
-  /**
-   * Append a single column definition.
-   */
   addColumn(def: ColumnDef): this {
     this._columns.push(def);
     return this;
   }
 
-  // ── Header API ─────────────────────────────────────────────────────────────
-
-  /**
-   * Write column headers to the current row and advance the row cursor.
-   * Optionally provide a global header style that is merged with per-column
-   * `headerStyle`.
-   *
-   * Call this *after* `.columns()`.
-   */
   writeHeaders(globalStyle?: CellStyle): this {
     if (this._headerWritten) {
       throw new Error(
@@ -88,7 +68,6 @@ export class SheetBuilder {
 
     this._headerWritten = true;
 
-    // Register column definitions (width, key, hidden, default style)
     this._ws.columns = this._columns.map((c) => ({
       key: c.key,
       width: c.width ?? 15,
@@ -98,37 +77,16 @@ export class SheetBuilder {
     return this;
   }
 
-  // ── Row API ─────────────────────────────────────────────────────────────────
-
-  /**
-   * Add a single row. Data can be:
-   * - An array of values aligned to column order
-   * - A key→value object aligned to `ColumnDef.key`
-   *
-   * @example
-   * sheet.addRow({ name: "Alice", sales: { formula: "=B2*1.1" } })
-   * sheet.addRow(["Alice", 42000], { height: 20 })
-   */
   addRow(data: RowData, options?: RowOptions): this {
     this._flushRow(data, options);
     return this;
   }
 
-  /**
-   * Add multiple rows efficiently.
-   */
   addRows(rows: RowData[], options?: RowOptions): this {
     for (const data of rows) this.addRow(data, options);
     return this;
   }
 
-  // ── Cell API ───────────────────────────────────────────────────────────────
-
-  /**
-   * Write a value and/or style to an individual cell by address.
-   *
-   * @param address  A1-style address, e.g. "B3"
-   */
   setCell(address: string, value?: CellValue, style?: CellStyle): this {
     const cell = this._ws.getCell(address);
     this._writeValue(cell, value);
@@ -136,15 +94,11 @@ export class SheetBuilder {
     return this;
   }
 
-  /**
-   * Apply a style to a range of cells.
-   *
-   * @param range  e.g. "A1:D4"
-   */
   styleRange(range: string, style: CellStyle): this {
     const [tl, br] = range.split(":");
-    const tlCell = this._ws.getCell(tl!);
-    const brCell = this._ws.getCell(br ?? tl!);
+    if (!tl) return this;
+    const tlCell = this._ws.getCell(tl);
+    const brCell = this._ws.getCell(br ?? tl);
 
     for (let r = tlCell.fullAddress.row; r <= brCell.fullAddress.row; r++) {
       for (let c = tlCell.fullAddress.col; c <= brCell.fullAddress.col; c++) {
@@ -154,14 +108,6 @@ export class SheetBuilder {
     return this;
   }
 
-  // ── Merge API ──────────────────────────────────────────────────────────────
-
-  /**
-   * Merge a range of cells, optionally writing a value and style to the top-left cell.
-   *
-   * @example
-   * sheet.merge({ range: "A1:E1", value: "Q1 Report", style: Styles.header })
-   */
   merge(region: MergeRange): this {
     this._ws.mergeCells(region.range);
 
@@ -175,46 +121,26 @@ export class SheetBuilder {
     return this;
   }
 
-  /**
-   * Merge multiple regions at once.
-   */
   mergeAll(regions: MergeRange[]): this {
     for (const r of regions) this.merge(r);
     return this;
   }
 
-  // ── Row height / column width shortcuts ────────────────────────────────────
-
-  /**
-   * Set the height of a specific row (1-indexed).
-   */
   rowHeight(rowNumber: number, height: number): this {
     this._ws.getRow(rowNumber).height = height;
     return this;
   }
 
-  /**
-   * Set the width of a specific column (letter or 1-indexed number).
-   */
   colWidth(col: string | number, width: number): this {
     this._ws.getColumn(col).width = width;
     return this;
   }
 
-  /**
-   * Auto-fit column widths based on actual cell content.
-   */
   autoFitColumns(startCol?: number | string, endCol?: number | string): this {
     this._ws.autoFitColumns(startCol, endCol);
     return this;
   }
 
-  // ── Freeze / auto-filter ───────────────────────────────────────────────────
-
-  /**
-   * Freeze panes at the given row and column.
-   * E.g. `freeze(1, 0)` freezes the header row.
-   */
   freeze(row: number, col = 0): this {
     const prev = this._ws.views?.[0];
     this._ws.views = [
@@ -230,22 +156,43 @@ export class SheetBuilder {
     return this;
   }
 
-  /**
-   * Enable Excel's auto-filter on the header row range.
-   *
-   * @param range  e.g. "A1:F1" — defaults to the full header row.
-   */
   autoFilter(range?: string): this {
-    const r =
-      range ??
-      (this._columns.length ? `A1:${colLetter(this._columns.length)}1` : "A1");
+    const r = range ?? (this._columns.length ? `A1:${colLetter(this._columns.length)}1` : "A1");
     this._ws.autoFilter = r;
+    return this;
+  }
+
+  // ── Reading / Export ───────────────────────────────────────────────────────
+
+  eachRow(callback: (row: ExcelRow, rowNumber: number) => void): void {
+    this._ws.eachRow(callback);
+  }
+
+  toJSON(): Record<string, ExcelCellValue>[];
+  toJSON(opts: SheetToJSONOptions & { header: 1 }): ExcelCellValue[][];
+  toJSON(opts: SheetToJSONOptions & { header: "A" }): Record<string, ExcelCellValue>[];
+  toJSON(opts: SheetToJSONOptions & { header: string[] }): Record<string, ExcelCellValue>[];
+  toJSON(opts?: SheetToJSONOptions): Record<string, ExcelCellValue>[] | ExcelCellValue[][] {
+    return this._ws.toJSON(opts);
+  }
+
+  toAOA(): ExcelCellValue[][] {
+    return this._ws.toAOA();
+  }
+
+  addJSON(data: Record<string, ExcelCellValue>[], opts?: AddJSONOptions): this {
+    this._ws.addJSON(data, opts);
+    return this;
+  }
+
+  addAOA(data: ExcelCellValue[][], opts?: AddAOAOptions): this {
+    this._ws.addAOA(data, opts);
     return this;
   }
 
   // ── Finalization ───────────────────────────────────────────────────────────
 
-  /** @internal Apply deferred async operations (e.g. sheet protection). */
+  /** @internal */
   async _finalize(): Promise<void> {
     if (this._protectionConfig) {
       await this._ws.protect(this._protectionConfig.password ?? "");
@@ -283,30 +230,24 @@ export class SheetBuilder {
       });
       if (opts.pageSetup.margins) {
         this._ws.pageSetup.margins = {
-          left: 0.7, right: 0.7, top: 0.75, bottom: 0.75,
-          header: 0.3, footer: 0.3,
+          left: 0.7,
+          right: 0.7,
+          top: 0.75,
+          bottom: 0.75,
+          header: 0.3,
+          footer: 0.3,
           ...opts.pageSetup.margins,
         };
       }
     }
     if (opts.headerFooter) {
       const hf = opts.headerFooter;
-      if (hf.oddHeader)
-        this._ws.headerFooter.oddHeader = formatHeaderFooterSection(
-          hf.oddHeader,
-        );
-      if (hf.oddFooter)
-        this._ws.headerFooter.oddFooter = formatHeaderFooterSection(
-          hf.oddFooter,
-        );
+      if (hf.oddHeader) this._ws.headerFooter.oddHeader = formatHeaderFooterSection(hf.oddHeader);
+      if (hf.oddFooter) this._ws.headerFooter.oddFooter = formatHeaderFooterSection(hf.oddFooter);
       if (hf.evenHeader)
-        this._ws.headerFooter.evenHeader = formatHeaderFooterSection(
-          hf.evenHeader,
-        );
+        this._ws.headerFooter.evenHeader = formatHeaderFooterSection(hf.evenHeader);
       if (hf.evenFooter)
-        this._ws.headerFooter.evenFooter = formatHeaderFooterSection(
-          hf.evenFooter,
-        );
+        this._ws.headerFooter.evenFooter = formatHeaderFooterSection(hf.evenFooter);
     }
     if (opts.protection) {
       this._protectionConfig = { password: opts.protection.password };
@@ -314,7 +255,7 @@ export class SheetBuilder {
   }
 
   private _flushRow(data: RowData, options?: RowOptions): void {
-    let excelRow: Row;
+    let excelRow: ExcelRow;
 
     if (Array.isArray(data)) {
       const rowValues = data.map(toExcelValue);
@@ -337,19 +278,16 @@ export class SheetBuilder {
     if (options) {
       if (options.height !== undefined) excelRow.height = options.height;
       if (options.hidden) excelRow.hidden = true;
-      if (options.outlineLevel !== undefined)
-        excelRow.outlineLevel = options.outlineLevel;
+      if (options.outlineLevel !== undefined) excelRow.outlineLevel = options.outlineLevel;
       if (options.style) {
-        excelRow.eachCell({ includeEmpty: true }, (cell) =>
-          applyStyle(cell, options.style),
-        );
+        excelRow.eachCell({ includeEmpty: true }, (cell) => applyStyle(cell, options.style!));
       }
     }
 
     excelRow.commit();
   }
 
-  private _writeValue(cell: Cell, value: CellValue | undefined): void {
+  private _writeValue(cell: ExcelCell, value: CellValue | undefined): void {
     if (value === undefined || value === null) return;
     if (isFormula(value)) {
       cell.value = toFormulaValue(value);
@@ -361,9 +299,7 @@ export class SheetBuilder {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function isFormula(
-  val: CellValue,
-): val is { formula: string; result?: CellPrimitive } {
+function isFormula(val: CellValue): val is { formula: string; result?: CellPrimitive } {
   return (
     typeof val === "object" &&
     val !== null &&
@@ -377,10 +313,7 @@ function normalizeFormula(f: string): string {
   return f.startsWith("=") ? f.slice(1) : f;
 }
 
-function toFormulaValue(v: {
-  formula: string;
-  result?: CellPrimitive;
-}): CellFormulaValue {
+function toFormulaValue(v: { formula: string; result?: CellPrimitive }): CellFormulaValue {
   const fv: CellFormulaValue = { formula: normalizeFormula(v.formula) };
   if (v.result !== undefined && v.result !== null) fv.result = v.result;
   return fv;
@@ -390,5 +323,3 @@ function toExcelValue(val: CellValue): CellPrimitive | CellFormulaValue {
   if (isFormula(val)) return toFormulaValue(val);
   return val as CellPrimitive;
 }
-
-

@@ -1,16 +1,16 @@
 import type {
   Cell,
-  Fill as ExcelFill,
-  Font as ExcelFont,
-  Borders as ExcelBorders,
   Alignment as ExcelAlignment,
   Border as ExcelBorder,
+  Borders as ExcelBorders,
+  Fill as ExcelFill,
+  Font as ExcelFont,
 } from "@cj-tech-master/excelts";
 import {
-  BUILTIN_FORMATS,
   type Alignment,
   type Border,
   type BorderStyle,
+  BUILTIN_FORMATS,
   type CellStyle,
   type Fill,
   type Font,
@@ -67,9 +67,7 @@ export function toExcelFill(fill: Fill): ExcelFill {
 
 // ─── Border ──────────────────────────────────────────────────────────────────
 
-function toExcelBorderSide(
-  side: NonNullable<Border["top"]>,
-): Partial<ExcelBorder> {
+function toExcelBorderSide(side: NonNullable<Border["top"]>): Partial<ExcelBorder> {
   return {
     style: side.style,
     color: side.color ? { argb: normalizeArgb(side.color) } : undefined,
@@ -126,9 +124,7 @@ export function applyStyle(cell: Cell, style: CellStyle | undefined): void {
 // ─── Header / Footer ─────────────────────────────────────────────────────────
 
 /** Builds an Excel header/footer string from left, center, and right sections. */
-export function formatHeaderFooterSection(
-  section: HeaderFooterSection,
-): string {
+export function formatHeaderFooterSection(section: HeaderFooterSection): string {
   return [
     section.left && `&L${section.left}`,
     section.center && `&C${section.center}`,
@@ -144,9 +140,7 @@ function normalizeArgb(hex: string): string {
   const clean = hex.replace(/^#/, "");
   if (clean.length === 6) return `FF${clean}`;
   if (clean.length === 8) return clean;
-  throw new Error(
-    `Invalid colour "${hex}" — must be 6-char RGB or 8-char ARGB hex.`,
-  );
+  throw new Error(`Invalid colour "${hex}" — must be 6-char RGB or 8-char ARGB hex.`);
 }
 
 export function colLetter(n: number): string {
@@ -245,11 +239,17 @@ export const border = {
  */
 export const align = {
   center: { alignment: { horizontal: "center", vertical: "middle" } } as const satisfies CellStyle,
-  centerWrap: { alignment: { horizontal: "center", vertical: "middle", wrapText: true } } as const satisfies CellStyle,
+  centerWrap: {
+    alignment: { horizontal: "center", vertical: "middle", wrapText: true },
+  } as const satisfies CellStyle,
   left: { alignment: { horizontal: "left", vertical: "middle" } } as const satisfies CellStyle,
-  leftWrap: { alignment: { horizontal: "left", vertical: "middle", wrapText: true } } as const satisfies CellStyle,
+  leftWrap: {
+    alignment: { horizontal: "left", vertical: "middle", wrapText: true },
+  } as const satisfies CellStyle,
   right: { alignment: { horizontal: "right", vertical: "middle" } } as const satisfies CellStyle,
-  rightWrap: { alignment: { horizontal: "right", vertical: "middle", wrapText: true } } as const satisfies CellStyle,
+  rightWrap: {
+    alignment: { horizontal: "right", vertical: "middle", wrapText: true },
+  } as const satisfies CellStyle,
 };
 
 // ─── Number format helpers ───────────────────────────────────────────────────
