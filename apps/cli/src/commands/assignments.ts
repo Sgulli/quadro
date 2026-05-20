@@ -71,13 +71,13 @@ export async function handler(options: AssignmentsOptions = {}): Promise<WriteRe
     club.totalRequests += Math.max(0, quantity - clubImaSeats.length);
   }
 
-  const orderedColumns: Array<{
+  const orderedColumns: {
     macroareaName: string;
     macroareaId: string;
     sectorName: string | null;
     sectorId: string | null;
     hasSectors: boolean;
-  }> = [];
+  }[] = [];
   for (const ma of macroareasWithSectors) {
     if (ma.sectors.length > 0) {
       for (const sector of ma.sectors) {

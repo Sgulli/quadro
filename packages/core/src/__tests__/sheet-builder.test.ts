@@ -1,7 +1,9 @@
+import { Workbook } from "@cj-tech-master/excelts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SheetBuilder } from "../sheet-builder.js";
 import type { SheetOptions } from "../types.js";
 
+<<<<<<< HEAD
 function createMockRow() {
   const callbacks: Array<(cell: unknown, colNumber: number) => void> = [];
   return {
@@ -73,9 +75,11 @@ function createMockWorksheet() {
   };
 }
 
+=======
+>>>>>>> origin/main
 function makeSheet(opts: SheetOptions) {
-  // biome-ignore lint/suspicious/noExplicitAny: mock Worksheet
-  const ws = createMockWorksheet() as any;
+  const wb = new Workbook();
+  const ws = wb.addWorksheet(opts.name);
   const sheet = new SheetBuilder(ws, opts);
   return { ws, sheet };
 }
@@ -88,6 +92,7 @@ describe("SheetBuilder", () => {
   describe("headers", () => {
     it("sets column definitions and writes header row", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+<<<<<<< HEAD
       sheet.headers([
         { key: "a", header: "A" },
         { key: "b", header: "B" },
@@ -97,11 +102,45 @@ describe("SheetBuilder", () => {
         { key: "b", width: 15, hidden: false },
       ]);
       expect(ws.addRow).toHaveBeenCalledWith(["A", "B"]);
+=======
+      sheet.columns([{ key: "a", header: "A" }]);
+      sheet.writeHeaders();
+      expect(ws.columns).toHaveLength(1);
+      expect(ws.columns[0].key).toBe("a");
+      expect(ws.columns[0].width).toBe(15);
+      expect(ws.columns[0].hidden).toBe(false);
+    });
+
+    it("addColumn() appends a column", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.addColumn({ key: "a", header: "A" });
+      sheet.addColumn({ key: "b", header: "B" });
+      sheet.writeHeaders();
+      expect(ws.columns).toHaveLength(2);
+    });
+  });
+
+  describe("writeHeaders", () => {
+    it("throws if no columns defined", () => {
+      const { sheet } = makeSheet({ name: "Test" });
+      expect(() => sheet.writeHeaders()).toThrow("Call columns() before writeHeaders()");
+    });
+
+    it("throws if called twice", () => {
+      const { sheet } = makeSheet({ name: "Test" });
+      sheet.columns([{ key: "a", header: "A" }]).writeHeaders();
+      expect(() => sheet.writeHeaders()).toThrow("writeHeaders() already called");
+>>>>>>> origin/main
     });
 
     it("calls addRow on the underlying worksheet", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+<<<<<<< HEAD
       sheet.headers([{ key: "x", header: "X" }]);
+=======
+      vi.spyOn(ws, "addRow");
+      sheet.columns([{ key: "x", header: "X" }]).writeHeaders();
+>>>>>>> origin/main
       expect(ws.addRow).toHaveBeenCalledWith(["X"]);
     });
   });
@@ -109,12 +148,14 @@ describe("SheetBuilder", () => {
   describe("addRow", () => {
     it("writes array data", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addRow");
       sheet.addRow(["a", "b"]);
       expect(ws.addRow).toHaveBeenCalledWith(["a", "b"]);
     });
 
     it("writes object data", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addRow");
       sheet.columns([
         { key: "name", header: "Name" },
         { key: "val", header: "Val" },
@@ -125,6 +166,7 @@ describe("SheetBuilder", () => {
 
     it("writes formula values", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addRow");
       sheet.addRow([{ formula: "SUM(A1:A10)" }]);
       expect(ws.addRow).toHaveBeenCalledWith([{ formula: "SUM(A1:A10)" }]);
     });
@@ -133,6 +175,7 @@ describe("SheetBuilder", () => {
   describe("addRows", () => {
     it("adds multiple rows", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addRow");
       sheet.addRows([[1], [2], [3]]);
       expect(ws.addRow).toHaveBeenCalledTimes(3);
     });
@@ -233,28 +276,28 @@ describe("SheetBuilder", () => {
     it("sets a value at the given address", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       sheet.setCell("B3", 42);
-      const cell = ws.getCell("B3") as Record<string, unknown>;
+      const cell = ws.getCell("B3");
       expect(cell.value).toBe(42);
     });
 
     it("applies style when provided", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       sheet.setCell("A1", "hello", { font: { bold: true } });
-      const cell = ws.getCell("A1") as Record<string, unknown>;
+      const cell = ws.getCell("A1");
       expect(cell.font).toBeDefined();
     });
 
     it("skips undefined value", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       sheet.setCell("A1");
-      const cell = ws.getCell("A1") as Record<string, unknown>;
-      expect(cell.value).toBeUndefined();
+      const cell = ws.getCell("A1");
+      expect(cell.value).toBeNull();
     });
 
     it("writes formula values", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       sheet.setCell("C5", { formula: "=B3*2", result: 100 });
-      const cell = ws.getCell("C5") as Record<string, unknown>;
+      const cell = ws.getCell("C5");
       expect(cell.value).toEqual({ formula: "B3*2", result: 100 });
     });
   });
@@ -263,8 +306,8 @@ describe("SheetBuilder", () => {
     it("applies style to cells in range", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       sheet.styleRange("A1:B2", { font: { bold: true } });
-      expect((ws.getCell("A1") as Record<string, unknown>).font).toBeDefined();
-      expect((ws.getCell("B2") as Record<string, unknown>).font).toBeDefined();
+      expect(ws.getCell("A1").font).toBeDefined();
+      expect(ws.getCell("B2").font).toBeDefined();
     });
 
     it("returns this for chaining", () => {
@@ -277,10 +320,14 @@ describe("SheetBuilder", () => {
   describe("merge", () => {
     it("merges cells and writes value", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
-      sheet.merge({ range: "A1:C1", value: "Title", style: { font: { bold: true } } });
-      const cell = ws.getCell("A1") as Record<string, unknown>;
+      sheet.merge({
+        range: "A1:C1",
+        value: "Title",
+        style: { font: { bold: true } },
+      });
+      const cell = ws.getCell("A1");
       expect(cell.value).toBe("Title");
-      expect((cell.font as Record<string, unknown>)?.bold).toBe(true);
+      expect(cell.font?.bold).toBe(true);
     });
 
     it("mergeRC delegates with rangeRef", () => {
@@ -306,12 +353,14 @@ describe("SheetBuilder", () => {
   describe("rowHeight / colWidth", () => {
     it("sets row height", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "getRow");
       sheet.rowHeight(1, 30);
       expect(ws.getRow).toHaveBeenCalledWith(1);
     });
 
     it("sets column width", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "getColumn");
       sheet.colWidth("A", 40);
       expect(ws.getColumn).toHaveBeenCalledWith("A");
     });
@@ -320,6 +369,7 @@ describe("SheetBuilder", () => {
   describe("autoFitColumns", () => {
     it("delegates to underlying worksheet", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "autoFitColumns");
       sheet.autoFitColumns();
       expect(ws.autoFitColumns).toHaveBeenCalled();
     });
@@ -329,16 +379,16 @@ describe("SheetBuilder", () => {
     it("sets frozen view state", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       sheet.freeze(1, 0);
-      const views = ws.views as Array<Record<string, unknown>>;
-      expect(views[0].state).toBe("frozen");
-      expect(views[0].ySplit).toBe(1);
+      const view = ws.views[0];
+      if (view.state !== "frozen") throw new Error("expected frozen view");
+      expect(view.ySplit).toBe(1);
     });
 
     it("preserves existing view properties", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
-      ws.views = [{ showGridLines: false, zoomScale: 80 }] as never;
+      ws.views = [{ showGridLines: false, zoomScale: 80 }];
       sheet.freeze(2);
-      const views = ws.views as Array<Record<string, unknown>>;
+      const views = ws.views;
       expect(views[0].showGridLines).toBe(false);
       expect(views[0].zoomScale).toBe(80);
       expect(views[0].state).toBe("frozen");
@@ -365,13 +415,18 @@ describe("SheetBuilder", () => {
 
   describe("_finalize", () => {
     it("protects sheet when protection configured", async () => {
-      const { ws, sheet } = makeSheet({ name: "Test", protection: { password: "secret" } });
+      const { ws, sheet } = makeSheet({
+        name: "Test",
+        protection: { password: "secret" },
+      });
+      vi.spyOn(ws, "protect");
       await sheet._finalize();
       expect(ws.protect).toHaveBeenCalledWith("secret");
     });
 
     it("skips when no protection", async () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "protect");
       await sheet._finalize();
       expect(ws.protect).not.toHaveBeenCalled();
     });
@@ -390,21 +445,24 @@ describe("SheetBuilder", () => {
 
     it("applies zoom", () => {
       const { ws } = makeSheet({ name: "Test", zoom: 120 });
-      const views = ws.views as Array<Record<string, unknown>>;
+      const views = ws.views;
       expect(views[0].zoomScale).toBe(120);
     });
 
     it("hides gridlines", () => {
       const { ws } = makeSheet({ name: "Test", showGridLines: false });
-      const views = ws.views as Array<Record<string, unknown>>;
+      const views = ws.views;
       expect(views[0].showGridLines).toBe(false);
     });
 
     it("applies freeze via options", () => {
-      const { ws } = makeSheet({ name: "Test", freeze: { row: 2, col: 1 } });
-      const views = ws.views as Array<Record<string, unknown>>;
-      expect(views[0].state).toBe("frozen");
-      expect(views[0].ySplit).toBe(2);
+      const { ws } = makeSheet({
+        name: "Test",
+        freeze: { row: 2, col: 1 },
+      });
+      const view = ws.views[0];
+      if (view.state !== "frozen") throw new Error("expected frozen view");
+      expect(view.ySplit).toBe(2);
     });
 
     it("applies header/footer", () => {
