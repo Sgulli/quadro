@@ -153,6 +153,22 @@ export function colLetter(n: number): string {
   return r;
 }
 
+/** Build an A1-style cell reference from 1‑based column and row numbers. */
+export function cellRef(col: number, row: number): string {
+  return `${colLetter(col)}${row}`;
+}
+
+/** Build a range string like `"B2:B10"` from a column index and row range. */
+export function colRange(col: number, startRow: number, endRow: number): string {
+  const c = colLetter(col);
+  return `${c}${startRow}:${c}${endRow}`;
+}
+
+/** Build a range string like `"B2:D10"` from two corners. */
+export function rangeRef(col1: number, row1: number, col2: number, row2: number): string {
+  return `${cellRef(col1, row1)}:${cellRef(col2, row2)}`;
+}
+
 // ─── style() compose helper ──────────────────────────────────────────────────
 
 /**

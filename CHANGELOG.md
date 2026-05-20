@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.3.0 (unreleased)
+
+- Data validation: `sheet.addDataValidation()`, `sheet.addListValidation()`, `sheet.addRangeValidation()`
+- Conditional formatting: `sheet.addConditionalFormatting()`, `sheet.addCellIsRule()`, `sheet.addExpressionRule()`
+- Conditional formatting: `sheet.addDataBar()`, `sheet.addColorScale()`, `sheet.addIconSet()`
+- Conditional formatting: `sheet.addTop10Rule()`, `sheet.addAboveAverageRule()`, `sheet.addContainsTextRule()`, `sheet.addTimePeriodRule()`
+- Exported `DataValidation`, `ConditionalFormattingOptions`, and related types from `@quadro/core`
+- Simplified API: `headers()` replaces `columns()` + `writeHeaders()` in one call
+- `merge()` accepts optional `height` property (no separate `rowHeight()` call needed)
+- `headers()` accepts optional `height` parameter
+- Columns auto-inferred from first object row when not explicitly defined
+- `columnRange()` auto-detects header offset (row 1 vs row 2)
+- CLI commands exposed via `pnpm cli` and `pnpm example`
+- Numeric coordinate API: `setCellRC()`, `mergeRC()`, `styleRangeRC()`, `colWidthRC()`
+- Numeric validation/formatting helpers: `cellRef()`, `colRange()`, `rangeRef()`
+- `addListValidationRC()`, `addRangeValidationRC()`, `addDataValidationRC()`
+- `addCellIsRuleRC()`, `addExpressionRuleRC()`, `addDataBarRC()`, `addColorScaleRC()`
+- `addIconSetRC()`, `addTop10RuleRC()`, `addAboveAverageRuleRC()`
+- `addContainsTextRuleRC()`, `addTimePeriodRuleRC()`
+- Full zero-A1-string sheet building with `for` loops
+- Conditional formatting removal: `sheet.removeConditionalFormatting()`
+- Rewrote assignments example using pure numeric coordinates (no A1 strings)
+- Fixed pre-existing merge crash in assignments (off-by-one `FIXED_COLS`)
+- Fixed pre-existing TypeScript errors in seat filter type guards
+
 ## 0.2.0 (unreleased)
 
 - Workbook reading: `WorkbookBuilder.load()`, `WorkbookBuilder.fromFile()`

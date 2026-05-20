@@ -1,12 +1,30 @@
 import type {
+  AboveAverageRuleType,
   AddAOAOptions,
   AddJSONOptions,
   CellFormulaValue,
+  CellIsOperators,
+  CellIsRuleType,
+  ColorScaleRuleType,
+  ConditionalFormattingOptions,
+  ContainsTextOperators,
+  ContainsTextRuleType,
+  DataBarRuleType,
+  DataValidation,
+  DataValidationOperator,
+  DataValidationWithFormulae,
   Cell as ExcelCell,
   CellValue as ExcelCellValue,
   Row as ExcelRow,
+  Style as ExcelStyle,
   Worksheet as ExcelWorksheet,
+  ExpressionRuleType,
+  IconSetRuleType,
+  IconSetTypes,
   SheetToJSONOptions,
+  TimePeriodRuleType,
+  TimePeriodTypes,
+  Top10RuleType,
   WorksheetView,
 } from "@cj-tech-master/excelts";
 import type {
@@ -19,13 +37,42 @@ import type {
   RowOptions,
   SheetOptions,
 } from "./types.js";
-import { applyStyle, colLetter, formatHeaderFooterSection } from "./utils.js";
+import {
+  applyStyle,
+  cellRef,
+  colLetter,
+  colRange,
+  formatHeaderFooterSection,
+  rangeRef,
+} from "./utils.js";
 
 export class SheetBuilder {
   private readonly _ws: ExcelWorksheet;
   private _columns: ColumnDef[] = [];
   private _headerWritten = false;
   private _protectionConfig?: { password?: string };
+  private _rowCount = 0;
+  private _columnsInferred = false;
+
+  /** Current number of data rows written (excludes header row). */
+  get rowCount(): number {
+    return this._rowCount;
+  }
+
+  /**
+   * Resolve a column key to a range string like `"B2:B5"`.
+   * Automatically accounts for header row when headers were written.
+   * @param key ColumnDef key
+   * @param startRow First data row (defaults to 1 if no headers, 2 after header row)
+   */
+  columnRange(key: string, startRow?: number): string {
+    if (startRow === undefined) startRow = this._headerWritten ? 2 : 1;
+    const col = this._columns.find((c) => c.key === key);
+    if (!col) throw new Error(`[SheetBuilder] No column with key "${key}".`);
+    const idx = this._columns.indexOf(col);
+    const letter = colLetter(idx + 1);
+    return `${letter}${startRow}:${letter}${startRow + this._rowCount - 1}`;
+  }
 
   /** @internal */
   constructor(
@@ -46,16 +93,19 @@ export class SheetBuilder {
     return this;
   }
 
-  writeHeaders(globalStyle?: CellStyle): this {
+  /** Set column definitions and write the header row in one call. */
+  headers(defs: ColumnDef[], globalStyle?: CellStyle, height?: number): this {
+    this._columns = defs;
+    this._writeHeaders(globalStyle, height);
+    return this;
+  }
+
+  private _writeHeaders(globalStyle?: CellStyle, height?: number): void {
     if (this._headerWritten) {
-      throw new Error(
-        `[SheetBuilder] writeHeaders() already called on sheet "${this._opts.name}".`,
-      );
+      throw new Error(`[SheetBuilder] headers() already called on sheet "${this._opts.name}".`);
     }
     if (this._columns.length === 0) {
-      throw new Error(
-        `[SheetBuilder] Call columns() before writeHeaders() on sheet "${this._opts.name}".`,
-      );
+      throw new Error(`[SheetBuilder] headers() requires at least one column definition.`);
     }
 
     const row = this._ws.addRow(this._columns.map((c) => c.header));
@@ -65,6 +115,7 @@ export class SheetBuilder {
       if (col?.headerStyle) applyStyle(cell, col.headerStyle);
     });
     row.commit();
+    if (height) row.height = height;
 
     this._headerWritten = true;
 
@@ -73,8 +124,6 @@ export class SheetBuilder {
       width: c.width ?? 15,
       hidden: c.hidden ?? false,
     }));
-
-    return this;
   }
 
   addRow(data: RowData, options?: RowOptions): this {
@@ -92,6 +141,16 @@ export class SheetBuilder {
     this._writeValue(cell, value);
     if (style) applyStyle(cell, style);
     return this;
+  }
+
+  /** Set a cell by 1‑based column and row numbers instead of A1 notation. */
+  setCellRC(col: number, row: number, value?: CellValue, style?: CellStyle): this {
+    return this.setCell(cellRef(col, row), value, style);
+  }
+
+  /** Style a range by 1‑based corner coordinates. */
+  styleRangeRC(col1: number, row1: number, col2: number, row2: number, style: CellStyle): this {
+    return this.styleRange(rangeRef(col1, row1, col2, row2), style);
   }
 
   styleRange(range: string, style: CellStyle): this {
@@ -115,10 +174,25 @@ export class SheetBuilder {
     if (!tl) return this;
 
     const cell = this._ws.getCell(tl);
-    if (region.value !== undefined) this._writeValue(cell, region.value);
+    if (region.value) this._writeValue(cell, region.value);
     if (region.style) applyStyle(cell, region.style);
+    if (region.height) this._ws.getRow(cell.fullAddress.row).height = region.height;
 
     return this;
+  }
+
+  /** Merge cells by 1‑based coordinates. */
+  mergeRC(
+    col1: number,
+    row1: number,
+    col2: number,
+    row2: number,
+    options?: { value?: CellValue; style?: CellStyle; height?: number },
+  ): this {
+    return this.merge({
+      range: `${cellRef(col1, row1)}:${cellRef(col2, row2)}`,
+      ...options,
+    });
   }
 
   mergeAll(regions: MergeRange[]): this {
@@ -134,6 +208,11 @@ export class SheetBuilder {
   colWidth(col: string | number, width: number): this {
     this._ws.getColumn(col).width = width;
     return this;
+  }
+
+  /** Set column width by 1‑based column number. */
+  colWidthRC(col: number, width: number): this {
+    return this.colWidth(col, width);
   }
 
   autoFitColumns(startCol?: number | string, endCol?: number | string): this {
@@ -160,6 +239,344 @@ export class SheetBuilder {
     const r = range ?? (this._columns.length ? `A1:${colLetter(this._columns.length)}1` : "A1");
     this._ws.autoFilter = r;
     return this;
+  }
+
+  // ── Data Validation ─────────────────────────────────────────────────────────
+
+  addDataValidation(address: string, validation: DataValidation): this {
+    this._ws.dataValidations.add(address, validation);
+    return this;
+  }
+
+  addDataValidationRC(col: number, row: number, validation: DataValidation): this {
+    return this.addDataValidation(cellRef(col, row), validation);
+  }
+
+  addListValidation(
+    address: string,
+    list: (string | number | Date)[],
+    options?: Omit<DataValidationWithFormulae, "type" | "formulae" | "operator">,
+  ): this {
+    this._ws.dataValidations.add(address, {
+      type: "list",
+      formulae: list.map(formatListValue),
+      ...options,
+    });
+    return this;
+  }
+
+  addListValidationRC(
+    col: number,
+    startRow: number,
+    endRow: number,
+    list: (string | number | Date)[],
+    options?: {
+      allowBlank?: boolean;
+      error?: string;
+      errorTitle?: string;
+      prompt?: string;
+      promptTitle?: string;
+      showErrorMessage?: boolean;
+      showInputMessage?: boolean;
+    },
+  ): this {
+    return this.addListValidation(colRange(col, startRow, endRow), list, options);
+  }
+
+  addRangeValidation(
+    address: string,
+    type: "whole" | "decimal" | "date" | "textLength",
+    operator: DataValidationOperator,
+    formulae: (string | number | Date)[],
+    options?: Omit<DataValidationWithFormulae, "type" | "formulae" | "operator">,
+  ): this {
+    this._ws.dataValidations.add(address, {
+      type,
+      operator,
+      formulae,
+      ...options,
+    });
+    return this;
+  }
+
+  addRangeValidationRC(
+    col: number,
+    startRow: number,
+    endRow: number,
+    type: "whole" | "decimal" | "date" | "textLength",
+    operator: DataValidationOperator,
+    formulae: (string | number | Date)[],
+    options?: {
+      allowBlank?: boolean;
+      error?: string;
+      errorTitle?: string;
+      prompt?: string;
+      promptTitle?: string;
+      showErrorMessage?: boolean;
+      showInputMessage?: boolean;
+    },
+  ): this {
+    return this.addRangeValidation(
+      colRange(col, startRow, endRow),
+      type,
+      operator,
+      formulae,
+      options,
+    );
+  }
+
+  // ── Conditional Formatting ─────────────────────────────────────────────────
+
+  addConditionalFormatting(cf: ConditionalFormattingOptions): this {
+    this._ws.addConditionalFormatting(cf);
+    return this;
+  }
+
+  removeConditionalFormatting(
+    filter?:
+      | number
+      | ((
+          value: ConditionalFormattingOptions,
+          index: number,
+          array: ConditionalFormattingOptions[],
+        ) => boolean),
+  ): this {
+    this._ws.removeConditionalFormatting(filter);
+    return this;
+  }
+
+  addCellIsRule(
+    ref: string,
+    operator: CellIsOperators,
+    formulae: (string | number)[],
+    style?: Partial<ExcelStyle>,
+  ): this {
+    const rule: CellIsRuleType = { type: "cellIs", operator, formulae };
+    if (style) rule.style = style;
+    this._ws.addConditionalFormatting({ ref, rules: [rule] });
+    return this;
+  }
+
+  addCellIsRuleRC(
+    col1: number,
+    row1: number,
+    col2: number,
+    row2: number,
+    operator: CellIsOperators,
+    formulae: (string | number)[],
+    style?: Partial<ExcelStyle>,
+  ): this {
+    return this.addCellIsRule(rangeRef(col1, row1, col2, row2), operator, formulae, style);
+  }
+
+  addExpressionRule(ref: string, formula: string, style?: Partial<ExcelStyle>): this {
+    const rule: ExpressionRuleType = {
+      type: "expression",
+      formulae: [formula],
+    };
+    if (style) rule.style = style;
+    this._ws.addConditionalFormatting({ ref, rules: [rule] });
+    return this;
+  }
+
+  addExpressionRuleRC(
+    col1: number,
+    row1: number,
+    col2: number,
+    row2: number,
+    formula: string,
+    style?: Partial<ExcelStyle>,
+  ): this {
+    return this.addExpressionRule(rangeRef(col1, row1, col2, row2), formula, style);
+  }
+
+  addDataBar(ref: string, color?: { argb?: string; theme?: number }): this {
+    const rule: DataBarRuleType = { type: "dataBar" };
+    if (color) rule.color = color;
+    this._ws.addConditionalFormatting({ ref, rules: [rule] });
+    return this;
+  }
+
+  addDataBarRC(
+    col1: number,
+    row1: number,
+    col2: number,
+    row2: number,
+    color?: { argb?: string; theme?: number },
+  ): this {
+    return this.addDataBar(rangeRef(col1, row1, col2, row2), color);
+  }
+
+  addColorScale(
+    ref: string,
+    cfvo: {
+      type: "min" | "max" | "num" | "percent" | "percentile" | "formula";
+      value?: number | string;
+    }[],
+    colors?: { argb?: string; theme?: number }[],
+  ): this {
+    const rule: ColorScaleRuleType = {
+      type: "colorScale",
+      cfvo,
+      color: colors,
+    };
+    this._ws.addConditionalFormatting({ ref, rules: [rule] });
+    return this;
+  }
+
+  addColorScaleRC(
+    col1: number,
+    row1: number,
+    col2: number,
+    row2: number,
+    cfvo: {
+      type: "min" | "max" | "num" | "percent" | "percentile" | "formula";
+      value?: number | string;
+    }[],
+    colors?: { argb?: string; theme?: number }[],
+  ): this {
+    return this.addColorScale(rangeRef(col1, row1, col2, row2), cfvo, colors);
+  }
+
+  addIconSet(
+    ref: string,
+    iconSet?: IconSetTypes,
+    cfvo?: {
+      type: "percent" | "num" | "percentile" | "formula";
+      value?: number | string;
+    }[],
+    options?: { showValue?: boolean; reverse?: boolean },
+  ): this {
+    const rule: IconSetRuleType = {
+      type: "iconSet",
+      iconSet,
+      cfvo,
+      ...options,
+    };
+    this._ws.addConditionalFormatting({ ref, rules: [rule] });
+    return this;
+  }
+
+  addIconSetRC(
+    col1: number,
+    row1: number,
+    col2: number,
+    row2: number,
+    iconSet?: IconSetTypes,
+    cfvo?: {
+      type: "percent" | "num" | "percentile" | "formula";
+      value?: number | string;
+    }[],
+    options?: { showValue?: boolean; reverse?: boolean },
+  ): this {
+    return this.addIconSet(rangeRef(col1, row1, col2, row2), iconSet, cfvo, options);
+  }
+
+  addTop10Rule(
+    ref: string,
+    rank: number,
+    options?: {
+      percent?: boolean;
+      bottom?: boolean;
+      style?: Partial<ExcelStyle>;
+    },
+  ): this {
+    const rule: Top10RuleType = {
+      type: "top10",
+      rank,
+      percent: options?.percent ?? false,
+      bottom: options?.bottom,
+    };
+    if (options?.style) rule.style = options.style;
+    this._ws.addConditionalFormatting({ ref, rules: [rule] });
+    return this;
+  }
+
+  addTop10RuleRC(
+    col1: number,
+    row1: number,
+    col2: number,
+    row2: number,
+    rank: number,
+    options?: {
+      percent?: boolean;
+      bottom?: boolean;
+      style?: Partial<ExcelStyle>;
+    },
+  ): this {
+    return this.addTop10Rule(rangeRef(col1, row1, col2, row2), rank, options);
+  }
+
+  addAboveAverageRule(
+    ref: string,
+    options?: { aboveAverage?: boolean; style?: Partial<ExcelStyle> },
+  ): this {
+    const rule: AboveAverageRuleType = {
+      type: "aboveAverage",
+      aboveAverage: options?.aboveAverage,
+    };
+    if (options?.style) rule.style = options.style;
+    this._ws.addConditionalFormatting({ ref, rules: [rule] });
+    return this;
+  }
+
+  addAboveAverageRuleRC(
+    col1: number,
+    row1: number,
+    col2: number,
+    row2: number,
+    options?: { aboveAverage?: boolean; style?: Partial<ExcelStyle> },
+  ): this {
+    return this.addAboveAverageRule(rangeRef(col1, row1, col2, row2), options);
+  }
+
+  addContainsTextRule(
+    ref: string,
+    text: string,
+    operator?: ContainsTextOperators,
+    style?: Partial<ExcelStyle>,
+  ): this {
+    const rule: ContainsTextRuleType = {
+      type: "containsText",
+      operator,
+      text,
+    };
+    if (style) rule.style = style;
+    this._ws.addConditionalFormatting({ ref, rules: [rule] });
+    return this;
+  }
+
+  addContainsTextRuleRC(
+    col1: number,
+    row1: number,
+    col2: number,
+    row2: number,
+    text: string,
+    operator?: ContainsTextOperators,
+    style?: Partial<ExcelStyle>,
+  ): this {
+    return this.addContainsTextRule(rangeRef(col1, row1, col2, row2), text, operator, style);
+  }
+
+  addTimePeriodRule(ref: string, timePeriod: TimePeriodTypes, style?: Partial<ExcelStyle>): this {
+    const rule: TimePeriodRuleType = {
+      type: "timePeriod",
+      timePeriod,
+    };
+    if (style) rule.style = style;
+    this._ws.addConditionalFormatting({ ref, rules: [rule] });
+    return this;
+  }
+
+  addTimePeriodRuleRC(
+    col1: number,
+    row1: number,
+    col2: number,
+    row2: number,
+    timePeriod: TimePeriodTypes,
+    style?: Partial<ExcelStyle>,
+  ): this {
+    return this.addTimePeriodRule(rangeRef(col1, row1, col2, row2), timePeriod, style);
   }
 
   // ── Reading / Export ───────────────────────────────────────────────────────
@@ -261,6 +678,10 @@ export class SheetBuilder {
       const rowValues = data.map(toExcelValue);
       excelRow = this._ws.addRow(rowValues);
     } else {
+      if (this._columns.length === 0 && !this._columnsInferred) {
+        this._columns = Object.keys(data).map((key) => ({ key, header: key }));
+        this._columnsInferred = true;
+      }
       const objValues: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(data)) {
         objValues[k] = toExcelValue(v);
@@ -285,6 +706,7 @@ export class SheetBuilder {
     }
 
     excelRow.commit();
+    this._rowCount++;
   }
 
   private _writeValue(cell: ExcelCell, value: CellValue | undefined): void {
@@ -298,6 +720,17 @@ export class SheetBuilder {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatListValue(v: string | number | Date): string | number | Date {
+  if (typeof v === "string") return `"${v.replace(/"/g, '""')}"`;
+  if (v instanceof Date) {
+    const y = v.getFullYear();
+    const m = String(v.getMonth() + 1).padStart(2, "0");
+    const d = String(v.getDate()).padStart(2, "0");
+    return `"${y}-${m}-${d}"`;
+  }
+  return v;
+}
 
 function isFormula(val: CellValue): val is { formula: string; result?: CellPrimitive } {
   return (
