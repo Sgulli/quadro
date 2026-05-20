@@ -1,77 +1,11 @@
+import { Workbook } from "@cj-tech-master/excelts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SheetBuilder } from "../sheet-builder.js";
 import type { SheetOptions } from "../types.js";
 
-function createMockRow() {
-  const callbacks: Array<(cell: unknown, colNumber: number) => void> = [];
-  return {
-    eachCell: vi.fn((_opts: unknown, cb?: (cell: unknown, colNumber: number) => void) => {
-      if (cb) callbacks.push(cb);
-    }),
-    commit: vi.fn(),
-    height: undefined as number | undefined,
-    hidden: false,
-    outlineLevel: undefined as number | undefined,
-    _callbacks: callbacks,
-  };
-}
-
-function parseAddress(addr: string): { row: number; col: number } {
-  const m = addr.match(/^([A-Z]+)(\d+)$/);
-  if (!m) return { row: 1, col: 1 };
-  const [, letters, digits] = m;
-  let col = 0;
-  for (const ch of letters) col = col * 26 + ch.charCodeAt(0) - 64;
-  return { row: Number.parseInt(digits, 10), col };
-}
-
-function createMockCell(address?: string) {
-  const addr = address ? parseAddress(address) : { row: 1, col: 1 };
-  return {
-    fullAddress: { row: addr.row, col: addr.col },
-    font: undefined,
-    fill: undefined,
-    border: undefined,
-    alignment: undefined,
-    numFmt: undefined,
-    protection: undefined,
-    value: undefined,
-  };
-}
-
-// biome-ignore format: mock return shape must stay compact
-function createMockWorksheet() {
-  // biome-ignore format: cells map
-  const cells = new Map<string, object>();
-  return {
-    addRow: vi.fn(() => createMockRow()),
-    getCell: vi.fn((a: string | number, b?: number) => {
-      let addr: string | undefined;
-      if (typeof a === "number" && b !== undefined) {
-        addr = `${String.fromCharCode(64 + b)}${a}`;
-      } else {
-        addr = String(a);
-      }
-      if (!cells.has(addr)) cells.set(addr, createMockCell(addr));
-      return cells.get(addr);
-    }),
-    mergeCells: vi.fn(),
-    getRow: vi.fn(() => ({ height: undefined })),
-    getColumn: vi.fn(() => ({ width: undefined })),
-    protect: vi.fn(),
-    autoFitColumns: vi.fn(),
-    views: undefined,
-    properties: { tabColor: undefined, defaultRowHeight: undefined },
-    pageSetup: {},
-    headerFooter: { oddHeader: "", oddFooter: "", evenHeader: "", evenFooter: "" },
-    autoFilter: undefined as string | undefined,
-    columns: undefined,
-  };
-}
-
 function makeSheet(opts: SheetOptions) {
-  // biome-ignore lint/suspicious/noExplicitAny: mock Worksheet
-  const ws = createMockWorksheet() as any;
+  const wb = new Workbook();
+  const ws = wb.addWorksheet(opts.name);
   const sheet = new SheetBuilder(ws, opts);
   return { ws, sheet };
 }
@@ -86,7 +20,10 @@ describe("SheetBuilder", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       sheet.columns([{ key: "a", header: "A" }]);
       sheet.writeHeaders();
-      expect(ws.columns).toEqual([{ key: "a", width: 15, hidden: false }]);
+      expect(ws.columns).toHaveLength(1);
+      expect(ws.columns[0].key).toBe("a");
+      expect(ws.columns[0].width).toBe(15);
+      expect(ws.columns[0].hidden).toBe(false);
     });
 
     it("addColumn() appends a column", () => {
@@ -112,6 +49,7 @@ describe("SheetBuilder", () => {
 
     it("calls addRow on the underlying worksheet", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addRow");
       sheet.columns([{ key: "x", header: "X" }]).writeHeaders();
       expect(ws.addRow).toHaveBeenCalledWith(["X"]);
     });
@@ -120,12 +58,14 @@ describe("SheetBuilder", () => {
   describe("addRow", () => {
     it("writes array data", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addRow");
       sheet.addRow(["a", "b"]);
       expect(ws.addRow).toHaveBeenCalledWith(["a", "b"]);
     });
 
     it("writes object data", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addRow");
       sheet.columns([
         { key: "name", header: "Name" },
         { key: "val", header: "Val" },
@@ -136,6 +76,7 @@ describe("SheetBuilder", () => {
 
     it("writes formula values", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addRow");
       sheet.addRow([{ formula: "SUM(A1:A10)" }]);
       expect(ws.addRow).toHaveBeenCalledWith([{ formula: "SUM(A1:A10)" }]);
     });
@@ -144,6 +85,7 @@ describe("SheetBuilder", () => {
   describe("addRows", () => {
     it("adds multiple rows", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addRow");
       sheet.addRows([[1], [2], [3]]);
       expect(ws.addRow).toHaveBeenCalledTimes(3);
     });
@@ -153,28 +95,28 @@ describe("SheetBuilder", () => {
     it("sets a value at the given address", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       sheet.setCell("B3", 42);
-      const cell = ws.getCell("B3") as Record<string, unknown>;
+      const cell = ws.getCell("B3");
       expect(cell.value).toBe(42);
     });
 
     it("applies style when provided", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       sheet.setCell("A1", "hello", { font: { bold: true } });
-      const cell = ws.getCell("A1") as Record<string, unknown>;
+      const cell = ws.getCell("A1");
       expect(cell.font).toBeDefined();
     });
 
     it("skips undefined value", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       sheet.setCell("A1");
-      const cell = ws.getCell("A1") as Record<string, unknown>;
-      expect(cell.value).toBeUndefined();
+      const cell = ws.getCell("A1");
+      expect(cell.value).toBeNull();
     });
 
     it("writes formula values", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       sheet.setCell("C5", { formula: "=B3*2", result: 100 });
-      const cell = ws.getCell("C5") as Record<string, unknown>;
+      const cell = ws.getCell("C5");
       expect(cell.value).toEqual({ formula: "B3*2", result: 100 });
     });
   });
@@ -183,8 +125,8 @@ describe("SheetBuilder", () => {
     it("applies style to cells in range", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       sheet.styleRange("A1:B2", { font: { bold: true } });
-      expect((ws.getCell("A1") as Record<string, unknown>).font).toBeDefined();
-      expect((ws.getCell("B2") as Record<string, unknown>).font).toBeDefined();
+      expect(ws.getCell("A1").font).toBeDefined();
+      expect(ws.getCell("B2").font).toBeDefined();
     });
 
     it("returns this for chaining", () => {
@@ -197,8 +139,12 @@ describe("SheetBuilder", () => {
   describe("merge", () => {
     it("merges cells and writes value", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
-      sheet.merge({ range: "A1:C1", value: "Title", style: { font: { bold: true } } });
-      const cell = ws.getCell("A1") as Record<string, unknown>;
+      sheet.merge({
+        range: "A1:C1",
+        value: "Title",
+        style: { font: { bold: true } },
+      });
+      const cell = ws.getCell("A1");
       expect(cell.value).toBe("Title");
       expect((cell.font as Record<string, unknown>)?.bold).toBe(true);
     });
@@ -215,12 +161,14 @@ describe("SheetBuilder", () => {
   describe("rowHeight / colWidth", () => {
     it("sets row height", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "getRow");
       sheet.rowHeight(1, 30);
       expect(ws.getRow).toHaveBeenCalledWith(1);
     });
 
     it("sets column width", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "getColumn");
       sheet.colWidth("A", 40);
       expect(ws.getColumn).toHaveBeenCalledWith("A");
     });
@@ -229,6 +177,7 @@ describe("SheetBuilder", () => {
   describe("autoFitColumns", () => {
     it("delegates to underlying worksheet", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "autoFitColumns");
       sheet.autoFitColumns();
       expect(ws.autoFitColumns).toHaveBeenCalled();
     });
@@ -238,7 +187,7 @@ describe("SheetBuilder", () => {
     it("sets frozen view state", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       sheet.freeze(1, 0);
-      const views = ws.views as Array<Record<string, unknown>>;
+      const views = ws.views as unknown as Array<Record<string, unknown>>;
       expect(views[0].state).toBe("frozen");
       expect(views[0].ySplit).toBe(1);
     });
@@ -247,7 +196,7 @@ describe("SheetBuilder", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       ws.views = [{ showGridLines: false, zoomScale: 80 }] as never;
       sheet.freeze(2);
-      const views = ws.views as Array<Record<string, unknown>>;
+      const views = ws.views as unknown as Array<Record<string, unknown>>;
       expect(views[0].showGridLines).toBe(false);
       expect(views[0].zoomScale).toBe(80);
       expect(views[0].state).toBe("frozen");
@@ -274,13 +223,18 @@ describe("SheetBuilder", () => {
 
   describe("_finalize", () => {
     it("protects sheet when protection configured", async () => {
-      const { ws, sheet } = makeSheet({ name: "Test", protection: { password: "secret" } });
+      const { ws, sheet } = makeSheet({
+        name: "Test",
+        protection: { password: "secret" },
+      });
+      vi.spyOn(ws, "protect");
       await sheet._finalize();
       expect(ws.protect).toHaveBeenCalledWith("secret");
     });
 
     it("skips when no protection", async () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "protect");
       await sheet._finalize();
       expect(ws.protect).not.toHaveBeenCalled();
     });
@@ -299,19 +253,22 @@ describe("SheetBuilder", () => {
 
     it("applies zoom", () => {
       const { ws } = makeSheet({ name: "Test", zoom: 120 });
-      const views = ws.views as Array<Record<string, unknown>>;
+      const views = ws.views as unknown as Array<Record<string, unknown>>;
       expect(views[0].zoomScale).toBe(120);
     });
 
     it("hides gridlines", () => {
       const { ws } = makeSheet({ name: "Test", showGridLines: false });
-      const views = ws.views as Array<Record<string, unknown>>;
+      const views = ws.views as unknown as Array<Record<string, unknown>>;
       expect(views[0].showGridLines).toBe(false);
     });
 
     it("applies freeze via options", () => {
-      const { ws } = makeSheet({ name: "Test", freeze: { row: 2, col: 1 } });
-      const views = ws.views as Array<Record<string, unknown>>;
+      const { ws } = makeSheet({
+        name: "Test",
+        freeze: { row: 2, col: 1 },
+      });
+      const views = ws.views as unknown as Array<Record<string, unknown>>;
       expect(views[0].state).toBe("frozen");
       expect(views[0].ySplit).toBe(2);
     });
