@@ -4,15 +4,18 @@
   "description": "Fluent, fully-typed Excel builder for Node.js — styles, formulas, merged cells, headers, streaming",
   "type": "module",
   "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
   "types": "dist/cjs/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/cjs/index.d.ts",
       "import": "./dist/esm/index.js",
       "require": "./dist/cjs/index.js"
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "scripts": {
     "clean": "rm -rf dist",
@@ -32,9 +35,28 @@
     "xlsx",
     "excelts",
     "typescript",
-    "builder"
+    "builder",
+    "spreadsheet",
+    "workbook"
   ],
   "license": "MIT",
+  "author": "Sgulli",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sgulli/quadro.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/Sgulli/quadro/tree/main/packages/core#readme",
+  "bugs": {
+    "url": "https://github.com/Sgulli/quadro/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "dependencies": {
     "@cj-tech-master/excelts": "9.5.7"
   },
