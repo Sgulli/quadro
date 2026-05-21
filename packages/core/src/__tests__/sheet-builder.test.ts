@@ -619,4 +619,185 @@ describe("SheetBuilder", () => {
       expect(result).toBe(sheet);
     });
   });
+
+  describe("hyperlinks", () => {
+    it("setCellHyperlink sets cell value with hyperlink", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.setCellHyperlink("A1", "https://example.com", "Click here", "Visit site");
+      const cell = ws.getCell("A1");
+      expect(cell.isHyperlink).toBe(true);
+      expect(cell.hyperlink).toBe("https://example.com");
+    });
+
+    it("setCellHyperlink uses hyperlink as default text", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.setCellHyperlink("B2", "https://example.com");
+      const cell = ws.getCell("B2");
+      expect(cell.isHyperlink).toBe(true);
+      expect(cell.hyperlink).toBe("https://example.com");
+    });
+
+    it("setCellHyperlinkRC delegates with cellRef", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "getCell");
+      sheet.setCellHyperlinkRC(3, 5, "https://example.com");
+      expect(ws.getCell).toHaveBeenCalledWith("C5");
+    });
+
+    it("methods are chainable", () => {
+      const { sheet } = makeSheet({ name: "Test" });
+      const result = sheet
+        .setCellHyperlink("A1", "https://a.com")
+        .setCellHyperlinkRC(2, 1, "https://b.com");
+      expect(result).toBe(sheet);
+    });
+  });
+
+  describe("rich text", () => {
+    it("setCellRichText sets rich text value", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.setCellRichText("A1", [{ text: "Hello ", font: { bold: true } }, { text: "World" }]);
+      const cell = ws.getCell("A1");
+      expect(cell.value).toBeDefined();
+    });
+
+    it("setCellRichTextRC delegates with cellRef", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "getCell");
+      sheet.setCellRichTextRC(1, 5, [{ text: "Test" }]);
+      expect(ws.getCell).toHaveBeenCalledWith("A5");
+    });
+
+    it("methods are chainable", () => {
+      const { sheet } = makeSheet({ name: "Test" });
+      const result = sheet.setCellRichText("A1", [{ text: "Hi" }]);
+      expect(result).toBe(sheet);
+    });
+  });
+
+  describe("images", () => {
+    it("addImage delegates to ws.addImage", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addImage");
+      sheet.addImage(1, "A1:B5");
+      expect(ws.addImage).toHaveBeenCalledWith(1, "A1:B5");
+    });
+
+    it("addBackgroundImage delegates to ws.addBackgroundImage", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addBackgroundImage");
+      sheet.addBackgroundImage(1);
+      expect(ws.addBackgroundImage).toHaveBeenCalledWith(1);
+    });
+
+    it("addWatermark delegates to ws.addWatermark", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addWatermark");
+      sheet.addWatermark({ imageId: 1, opacity: 0.15 });
+      expect(ws.addWatermark).toHaveBeenCalledWith({ imageId: 1, opacity: 0.15 });
+    });
+
+    it("removeWatermark delegates to ws.removeWatermark", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "removeWatermark");
+      sheet.removeWatermark();
+      expect(ws.removeWatermark).toHaveBeenCalled();
+    });
+
+    it("methods are chainable", () => {
+      const { sheet } = makeSheet({ name: "Test" });
+      const result = sheet.addImage(1, "A1:B5").addBackgroundImage(2);
+      expect(result).toBe(sheet);
+    });
+  });
+
+  describe("sparklines", () => {
+    it("addSparklineGroup delegates to ws.addSparklineGroup", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addSparklineGroup");
+      sheet.addSparklineGroup({
+        type: "line",
+        sparklines: [{ dataRef: "A1:C1", cellRef: "D1" }],
+      });
+      expect(ws.addSparklineGroup).toHaveBeenCalledWith({
+        type: "line",
+        sparklines: [{ dataRef: "A1:C1", cellRef: "D1" }],
+      });
+    });
+
+    it("methods are chainable", () => {
+      const { sheet } = makeSheet({ name: "Test" });
+      const result = sheet.addSparklineGroup({
+        type: "column",
+        sparklines: [{ dataRef: "A1:B1", cellRef: "C1" }],
+      });
+      expect(result).toBe(sheet);
+    });
+  });
+
+  describe("charts", () => {
+    it("addChart delegates to ws.addChart", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addChart");
+      sheet.addChart({ type: "bar", series: [{ values: "Sheet1!$B$2:$B$5" }] }, "A1:D15");
+      expect(ws.addChart).toHaveBeenCalledWith(
+        { type: "bar", series: [{ values: "Sheet1!$B$2:$B$5" }] },
+        "A1:D15",
+      );
+    });
+
+    it("addBarChart delegates to ws.addBarChart", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addBarChart");
+      sheet.addBarChart({ series: [{ values: "Sheet1!$B$2:$B$5" }] }, "A1:D15");
+      expect(ws.addBarChart).toHaveBeenCalledWith(
+        { series: [{ values: "Sheet1!$B$2:$B$5" }] },
+        "A1:D15",
+      );
+    });
+
+    it("addColumnChart delegates to ws.addColumnChart", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addColumnChart");
+      sheet.addColumnChart({ series: [{ values: "Sheet1!$B$2:$B$5" }] }, "A1:D15");
+      expect(ws.addColumnChart).toHaveBeenCalledWith(
+        { series: [{ values: "Sheet1!$B$2:$B$5" }] },
+        "A1:D15",
+      );
+    });
+
+    it("addLineChart delegates to ws.addLineChart", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addLineChart");
+      sheet.addLineChart({ series: [{ values: "Sheet1!$B$2:$B$5" }] }, "A1:D15");
+      expect(ws.addLineChart).toHaveBeenCalled();
+    });
+
+    it("addPieChart delegates to ws.addPieChart", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addPieChart");
+      sheet.addPieChart({ series: [{ values: "Sheet1!$B$2:$B$5" }] }, "A1:D15");
+      expect(ws.addPieChart).toHaveBeenCalled();
+    });
+
+    it("addComboChart delegates to ws.addComboChart", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addComboChart");
+      sheet.addComboChart(
+        {
+          groups: [{ type: "bar", series: [{ values: "Sheet1!$B$2:$B$5" }] }],
+        },
+        "A1:D15",
+      );
+      expect(ws.addComboChart).toHaveBeenCalled();
+    });
+
+    it("methods are chainable", () => {
+      const { sheet } = makeSheet({ name: "Test" });
+      const result = sheet
+        .addChart({ type: "bar", series: [{ values: "Sheet1!$B$2:$B$5" }] }, "A1:D15")
+        .addLineChart({ series: [{ values: "Sheet1!$B$2:$B$5" }] }, "A1:D15");
+      expect(result).toBe(sheet);
+    });
+  });
 });

@@ -3,8 +3,10 @@ import type {
   AddAOAOptions,
   AddJSONOptions,
   CellFormulaValue,
+  CellHyperlinkValueInput,
   CellIsOperators,
   CellIsRuleType,
+  CellRichTextValue,
   ColorScaleRuleType,
   ConditionalFormattingOptions,
   ContainsTextOperators,
@@ -30,14 +32,32 @@ import type {
   WorksheetView,
 } from "@cj-tech-master/excelts";
 import type {
+  AddBarChartOptions,
+  AddChartExOptions,
+  AddChartOptions,
+  AddChartRange,
+  AddComboChartOptions,
+  AddPieChartOptions,
+  AddScatterChartOptions,
+  AddSurfaceChartOptions,
+} from "@cj-tech-master/excelts/chart";
+import { installChartSupport } from "@cj-tech-master/excelts/chart";
+
+installChartSupport();
+
+import type {
+  AddImageRange,
+  AddSparklineGroupOptions,
   CellPrimitive,
   CellStyle,
   CellValue,
   ColumnDef,
   MergeRange,
+  RichTextRun,
   RowData,
   RowOptions,
   SheetOptions,
+  WatermarkOptions,
 } from "./types.js";
 import {
   applyStyle,
@@ -634,6 +654,172 @@ export class SheetBuilder {
   ): this {
     const ref = rangeRef(col1, row1, col2, row2);
     return this.addTable(name, ref, columns, options);
+  }
+
+  // ── Hyperlinks ──────────────────────────────────────────────────────────────
+
+  setCellHyperlink(address: string, hyperlink: string, text?: string, tooltip?: string): this {
+    const cell = this._ws.getCell(address);
+    cell.value = { text: text ?? hyperlink, hyperlink, tooltip } as CellHyperlinkValueInput;
+    return this;
+  }
+
+  setCellHyperlinkRC(
+    col: number,
+    row: number,
+    hyperlink: string,
+    text?: string,
+    tooltip?: string,
+  ): this {
+    return this.setCellHyperlink(cellRef(col, row), hyperlink, text, tooltip);
+  }
+
+  // ── Rich Text ───────────────────────────────────────────────────────────────
+
+  setCellRichText(address: string, richText: RichTextRun[]): this {
+    const cell = this._ws.getCell(address);
+    cell.value = { richText } as CellRichTextValue;
+    return this;
+  }
+
+  setCellRichTextRC(col: number, row: number, richText: RichTextRun[]): this {
+    return this.setCellRichText(cellRef(col, row), richText);
+  }
+
+  // ── Images ──────────────────────────────────────────────────────────────────
+
+  addImage(imageId: string | number, range: AddImageRange): this {
+    this._ws.addImage(imageId, range);
+    return this;
+  }
+
+  addBackgroundImage(imageId: string | number): this {
+    this._ws.addBackgroundImage(imageId);
+    return this;
+  }
+
+  addWatermark(options: WatermarkOptions): this {
+    this._ws.addWatermark(options);
+    return this;
+  }
+
+  removeWatermark(): this {
+    this._ws.removeWatermark();
+    return this;
+  }
+
+  // ── Sparklines ──────────────────────────────────────────────────────────────
+
+  addSparklineGroup(options: AddSparklineGroupOptions): this {
+    this._ws.addSparklineGroup(options);
+    return this;
+  }
+
+  // ── Charts ──────────────────────────────────────────────────────────────────
+
+  addChart(options: AddChartOptions, range: AddChartRange): this {
+    this._ws.addChart(options, range);
+    return this;
+  }
+
+  addColumnChart(options: Omit<AddBarChartOptions, "type" | "barDir">, range: AddChartRange): this {
+    this._ws.addColumnChart(options, range);
+    return this;
+  }
+
+  addBarChart(options: Omit<AddBarChartOptions, "type" | "barDir">, range: AddChartRange): this {
+    this._ws.addBarChart(options, range);
+    return this;
+  }
+
+  addLineChart(options: Omit<AddChartOptions, "type">, range: AddChartRange): this {
+    this._ws.addLineChart(options, range);
+    return this;
+  }
+
+  addAreaChart(options: Omit<AddChartOptions, "type">, range: AddChartRange): this {
+    this._ws.addAreaChart(options, range);
+    return this;
+  }
+
+  addPieChart(options: Omit<AddPieChartOptions, "type">, range: AddChartRange): this {
+    this._ws.addPieChart(options, range);
+    return this;
+  }
+
+  addDoughnutChart(options: Omit<AddPieChartOptions, "type">, range: AddChartRange): this {
+    this._ws.addDoughnutChart(options, range);
+    return this;
+  }
+
+  addScatterChart(options: Omit<AddScatterChartOptions, "type">, range: AddChartRange): this {
+    this._ws.addScatterChart(options, range);
+    return this;
+  }
+
+  addBubbleChart(options: Omit<AddChartOptions, "type">, range: AddChartRange): this {
+    this._ws.addBubbleChart(options, range);
+    return this;
+  }
+
+  addRadarChart(options: Omit<AddChartOptions, "type">, range: AddChartRange): this {
+    this._ws.addRadarChart(options, range);
+    return this;
+  }
+
+  addStockChart(options: Omit<AddChartOptions, "type">, range: AddChartRange): this {
+    this._ws.addStockChart(options, range);
+    return this;
+  }
+
+  addSurfaceChart(options: Omit<AddSurfaceChartOptions, "type">, range: AddChartRange): this {
+    this._ws.addSurfaceChart(options, range);
+    return this;
+  }
+
+  addHistogramChart(options: Omit<AddChartExOptions, "type">, range: AddChartRange): this {
+    this._ws.addHistogramChart(options, range);
+    return this;
+  }
+
+  addParetoChart(options: Omit<AddChartExOptions, "type">, range: AddChartRange): this {
+    this._ws.addParetoChart(options, range);
+    return this;
+  }
+
+  addWaterfallChart(options: Omit<AddChartExOptions, "type">, range: AddChartRange): this {
+    this._ws.addWaterfallChart(options, range);
+    return this;
+  }
+
+  addFunnelChart(options: Omit<AddChartExOptions, "type">, range: AddChartRange): this {
+    this._ws.addFunnelChart(options, range);
+    return this;
+  }
+
+  addTreemapChart(options: Omit<AddChartExOptions, "type">, range: AddChartRange): this {
+    this._ws.addTreemapChart(options, range);
+    return this;
+  }
+
+  addSunburstChart(options: Omit<AddChartExOptions, "type">, range: AddChartRange): this {
+    this._ws.addSunburstChart(options, range);
+    return this;
+  }
+
+  addBoxWhiskerChart(options: Omit<AddChartExOptions, "type">, range: AddChartRange): this {
+    this._ws.addBoxWhiskerChart(options, range);
+    return this;
+  }
+
+  addRegionMapChart(options: Omit<AddChartExOptions, "type">, range: AddChartRange): this {
+    this._ws.addRegionMapChart(options, range);
+    return this;
+  }
+
+  addComboChart(options: AddComboChartOptions, range: AddChartRange): this {
+    this._ws.addComboChart(options, range);
+    return this;
   }
 
   // ── Reading / Export ───────────────────────────────────────────────────────

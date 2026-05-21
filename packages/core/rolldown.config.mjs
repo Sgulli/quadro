@@ -3,7 +3,7 @@ import { defineConfig } from "rolldown";
 export default defineConfig([
   {
     input: "src/index.ts",
-    external: ["@cj-tech-master/excelts", "node:fs", "node:path"],
+    external: ["@cj-tech-master/excelts", "@cj-tech-master/excelts/chart", "node:fs", "node:path"],
 
     output: {
       format: "esm",
@@ -14,7 +14,7 @@ export default defineConfig([
   },
   {
     input: "src/index.ts",
-    external: ["@cj-tech-master/excelts", "node:fs", "node:path"],
+    external: ["@cj-tech-master/excelts", "@cj-tech-master/excelts/chart", "node:fs", "node:path"],
 
     output: {
       format: "cjs",
