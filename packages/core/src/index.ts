@@ -62,25 +62,19 @@ export {
 export {
   accounting,
   align,
-  applyStyle,
   border,
-  cellRef,
-  colLetter,
-  colRange,
+  color,
   currency,
   fill,
   font,
-  formatHeaderFooterSection,
   numFmt,
-  rangeRef,
-  resolveNumberFormat,
   Styles,
   style,
-  toExcelAlignment,
-  toExcelBorder,
-  toExcelFill,
-  toExcelFont,
 } from "./utils.js";
+
+// ── Internal helpers (used by @quadro/cli; may change without notice) ────────
+
+export { cellRef, colLetter, colRange, rangeRef } from "./utils.js";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -123,7 +117,12 @@ export type {
   CellStyle,
   CellValue,
   ChartType,
+  // Overload helper types
+  Addr,
   // Column / row / sheet
+  CellRange,
+  // Data validation
+  RangeValidationDef,
   ColumnDef,
   ExcelChartExPreset,
   ExcelChartPreset,

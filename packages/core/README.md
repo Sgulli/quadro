@@ -33,7 +33,7 @@ await new WorkbookBuilder({ author: "Acme Corp" })
 - **Formulas** — typed helpers for SUM, AVERAGE, IF, ADD, PCT, and more
 - **Data validation** — dropdown lists, number/date ranges, custom rules
 - **Conditional formatting** — cell rules, data bars, color scales, icon sets, top N
-- **Numeric coordinate API** — reference cells by `(col, row)` numbers, not A1 strings
+- **Numeric tuple API** — reference cells by `[col, row]` tuples, not A1 strings
 - **Merged cells** — merge ranges with value and style
 - **Freeze panes & auto-filter** — header rows stay visible, one-liner filter
 - **Headers & footers** — per-sheet odd/even header/footer sections
@@ -60,11 +60,14 @@ await new WorkbookBuilder()
       // Columns "product", "quantity", "date" are auto-inferred from the first row.
       // sheet.columnRange("quantity") → "B2:B3"
       .addListValidation(sheet.columnRange("product"), ["Widget A", "Widget B", "Gadget X"])
-      .addRangeValidation(sheet.columnRange("quantity"), "whole", "between", [1, 1000], {
+      .addRangeValidation(sheet.columnRange("quantity"), {
+        type: "whole", operator: "between", formulae: [1, 1000],
         error: "Must be between 1 and 1000",
         errorTitle: "Invalid quantity",
       })
-      .addRangeValidation(sheet.columnRange("date"), "date", "greaterThanOrEqual", [new Date("2026-01-01")]);
+      .addRangeValidation(sheet.columnRange("date"), {
+        type: "date", operator: "greaterThanOrEqual", formulae: [new Date("2026-01-01")],
+      });
   })
   .write("./validation.xlsx");
 ```
@@ -104,12 +107,12 @@ await new WorkbookBuilder()
   .write("./formatting.xlsx");
 ```
 
-## Numeric API (RC)
+## Numeric Tuple API
 
-All methods that accept A1-style cell references have a numeric `RC` counterpart — build entire workbooks with `for` loops, no string concatenation.
+Every method that accepts an A1 string also accepts a `[col, row]` or `[c1, r1, c2, r2]` tuple — build entire workbooks with `for` loops, no string concatenation.
 
 ```ts
-import { WorkbookBuilder, F, rangeRef, colRange, cellRef } from "@qquadro/core";
+import { WorkbookBuilder, F } from "@qquadro/core";
 
 const data = [
   { name: "Alice", score: 85, status: "Pass" },
@@ -128,52 +131,55 @@ await new WorkbookBuilder()
 
     const c = { name: sheet.columnIndex("name"), score: sheet.columnIndex("score"), status: sheet.columnIndex("status") };
 
-    // Write data with for loop using RC methods
+    // Write data with for loop using tuple addresses
     data.forEach((row, i) => {
       const r = dataStart + i;
       sheet
-        .setCellRC(c.name, r, row.name)
-        .setCellRC(c.score, r, row.score)
-        .setCellRC(c.status, r, row.status);
+        .setCell([c.name, r], row.name)
+        .setCell([c.score, r], row.score)
+        .setCell([c.status, r], row.status);
     });
 
     // Apply validation and formatting by column index
     const dr = { start: dataStart, end: dataStart + data.length - 1 };
     sheet
-      .addDataBarRC(c.score, dr.start, c.score, dr.end, { argb: "FF5B9BD5" })
-      .addCellIsRuleRC(
-        c.score, dr.start, c.score, dr.end,
-        "greaterThanOrEqual", [70],
-        { font: { bold: true, color: { argb: "FF006100" } } },
-      )
-      .addIconSetRC(c.score, dr.start, c.score, dr.end, "3TrafficLights1");
+      .addDataBar([c.score, dr.start, c.score, dr.end], { argb: "FF5B9BD5" })
+      .addCellIsRule([c.score, dr.start, c.score, dr.end], "greaterThanOrEqual", [70], {
+        font: { bold: true, color: { argb: "FF006100" } },
+      })
+      .addIconSet([c.score, dr.start, c.score, dr.end], "3TrafficLights1");
 
     // Formula: sum in footer row
-    sheet.setCellRC(c.score, dr.end + 1, F.sum(colRange(c.score, dr.start, dr.end)));
+    sheet.setCell([c.score, dr.end + 1], F.sum(`${c.score}${dr.start}:${c.score}${dr.end}`));
   })
   .write("./grades.xlsx");
 ```
 
-### RC method reference
+### Tuple overload reference
 
-| Category | A1 method | RC method |
+All A1 methods also accept numeric tuples. Pass them anywhere you'd pass an A1 string:
+
+| Category | A1 string | Numeric tuple |
 |---|---|---|
-| Cell | `setCell("D5", val)` | `setCellRC(4, 5, val)` |
-| Merge | `merge({range:"D1:E1"})` | `mergeRC(4,1, 5,1)` |
-| Style | `styleRange("D1:E1", s)` | `styleRangeRC(4,1, 5,1, s)` |
-| Width | `colWidth("D", 16)` | `colWidthRC(4, 16)` |
-| Validation | `addDataValidation("A1", v)` | `addDataValidationRC(1, 1, v)` |
-| List | `addListValidation("D2:D10", [...])` | `addListValidationRC(4,2,10, [...])` |
-| Range val. | `addRangeValidation("D2:D10", ...)` | `addRangeValidationRC(4,2,10, ...)` |
-| Cell is | `addCellIsRule("D2:D10", ...)` | `addCellIsRuleRC(4,2,4,10, ...)` |
-| Expression | `addExpressionRule(...)` | `addExpressionRuleRC(...)` |
-| Data bar | `addDataBar(...)` | `addDataBarRC(...)` |
-| Color scale | `addColorScale(...)` | `addColorScaleRC(...)` |
-| Icon set | `addIconSet(...)` | `addIconSetRC(...)` |
-| Top 10 | `addTop10Rule(...)` | `addTop10RuleRC(...)` |
-| Above avg | `addAboveAverageRule(...)` | `addAboveAverageRuleRC(...)` |
-| Text | `addContainsTextRule(...)` | `addContainsTextRuleRC(...)` |
-| Time | `addTimePeriodRule(...)` | `addTimePeriodRuleRC(...)` |
+| Cell | `setCell("D5", val)` | `setCell([4, 5], val)` |
+| Merge | `merge("D1:E1")` | `merge([4, 1, 5, 1])` |
+| Style | `styleRange("D2:D10", s)` | `styleRange([4, 2, 4, 10], s)` |
+| Validation | `addDataValidation("A1", v)` | `addDataValidation([1, 1], v)` |
+| List | `addListValidation("B3:B10", [...])` | `addListValidation([2, 3, 2, 10], [...])` |
+| Range val. | `addRangeValidation("D2:D10", ...)` | `addRangeValidation([4, 2, 4, 10], ...)` |
+| Cell is | `addCellIsRule("D2:D10", ...)` | `addCellIsRule([4, 2, 4, 10], ...)` |
+| Expression | `addExpressionRule("D2:D10", ...)` | `addExpressionRule([4, 2, 4, 10], ...)` |
+| Data bar | `addDataBar("D2:D10")` | `addDataBar([4, 2, 4, 10])` |
+| Color scale | `addColorScale("C1:C10", ...)` | `addColorScale([3, 1, 3, 10], ...)` |
+| Icon set | `addIconSet("D1:D10", ...)` | `addIconSet([4, 1, 4, 10], ...)` |
+| Top 10 | `addTop10Rule("E1:E10", ...)` | `addTop10Rule([5, 1, 5, 10], ...)` |
+| Above avg | `addAboveAverageRule("F1:F10")` | `addAboveAverageRule([6, 1, 6, 10])` |
+| Text | `addContainsTextRule("G1:G10", ...)` | `addContainsTextRule([7, 1, 7, 10], ...)` |
+| Time | `addTimePeriodRule("H1:H10", ...)` | `addTimePeriodRule([8, 1, 8, 10], ...)` |
+| Table | `addTable("T", "A1:C10", ...)` | `addTable("T", [1, 1, 3, 10], ...)` |
+| Note | `addNote("B3", text)` | `addNote([2, 3], text)` |
+| Hyperlink | `setCellHyperlink("C5", url)` | `setCellHyperlink([3, 5], url)` |
+| Rich text | `setCellRichText("A5", rt)` | `setCellRichText([1, 5], rt)` |
 
 ### Coordinate helpers
 

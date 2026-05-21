@@ -48,7 +48,7 @@ Requires Node 18+.
 ## Features
 
 - **Fluent API** — chainable `.headers()`, `.addRow()`, `.merge()`, `.freeze()`, etc.
-- **Numeric RC API** — reference cells by `(col, row)` numbers, no A1 strings
+- **Numeric tuple API** — reference cells by `[col, row]` tuples, no A1 strings
 - **Data validation** — dropdown lists, number/date ranges, custom formulas
 - **Conditional formatting** — cell rules, data bars, color scales, icon sets, top N
 - **Named ranges** — workbook-level defined names with RC support
@@ -92,9 +92,9 @@ wb.addSheet({ name: "Sales", freeze: { row: 2 } }, (sheet) => {
 const { filePath, sizeBytes } = await wb.write("./output/report.xlsx");
 ```
 
-### Numeric RC API — No A1 strings
+### Numeric tuple API — No A1 strings
 
-Use `for` loops with column/row numbers:
+Use `for` loops with `[col, row]` tuples instead of A1 strings:
 
 ```ts
 const COL = { name: 1, score: 2, status: 3 };
@@ -113,8 +113,8 @@ sheet
 
 const dr = { start: dataStart, end: dataStart + sheet.rowCount - 1 };
 sheet
-  .addDataBarRC(COL.score, dr.start, COL.score, dr.end, { argb: "FF5B9BD5" })
-  .addCellIsRuleRC(COL.score, dr.start, COL.score, dr.end, "greaterThanOrEqual", [70], {
+  .addDataBar([COL.score, dr.start, COL.score, dr.end], { argb: "FF5B9BD5" })
+  .addCellIsRule([COL.score, dr.start, COL.score, dr.end], "greaterThanOrEqual", [70], {
     font: { bold: true, color: { argb: "FF006100" } },
   });
 ```
@@ -123,7 +123,7 @@ sheet
 
 ```ts
 wb.defineName("MyRange", "A1:B10", "Sheet1");
-wb.defineNameRC("Data", 1, 1, 5, 10, "Sheet1");
+wb.defineName("Data", [1, 1, 5, 10], "Sheet1");
 wb.defineFormula("Double", "LAMBDA(x,x*2)");
 wb.getDefinedNames(); // → DefinedNameModel[]
 ```
@@ -146,7 +146,8 @@ sheet.addTable("SalesTable", "A1:D20", [
 ```ts
 sheet
   .addListValidation(sheet.columnRange("product"), ["Widget A", "Widget B"])
-  .addRangeValidation(sheet.columnRange("quantity"), "whole", "between", [1, 1000], {
+  .addRangeValidation(sheet.columnRange("quantity"), {
+    type: "whole", operator: "between", formulae: [1, 1000],
     error: "Must be between 1 and 1000",
   });
 ```
@@ -190,8 +191,8 @@ await wb.write("./output.xlsx");
 
 ```ts
 // Write CSV
-const csvString = await wb.toCsv();
-await wb.toCsv("./output.csv");
+const csvString = await wb.toCsvString();
+await wb.writeCsv("./output.csv");
 
 // Read CSV from inline data
 const csvWb = await WorkbookBuilder.fromCsv("name,age\nAlice,30\nBob,25");

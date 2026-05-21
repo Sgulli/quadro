@@ -130,32 +130,32 @@ export async function handler(options: AssignmentsOptions = {}): Promise<WriteRe
         const assignR = assignedRow;
         const availR = availableRow;
 
-        sheet.setCellRC(1, 1, F.sum(colRange(1, dr + 1, drEnd + 1)), darkHeader);
-        sheet.mergeRC(1, 1, 1, 2, { style: darkHeader });
+        sheet.setCell([1, 1], F.sum(colRange(1, dr + 1, drEnd + 1)), darkHeader);
+        sheet.merge([1, 1, 1, 2], { style: darkHeader });
 
-        sheet.setCellRC(2, 1, F.sum(colRange(2, dr + 1, drEnd + 1)), darkHeader);
-        sheet.mergeRC(2, 1, 2, 2, { style: darkHeader });
+        sheet.setCell([2, 1], F.sum(colRange(2, dr + 1, drEnd + 1)), darkHeader);
+        sheet.merge([2, 1, 2, 2], { style: darkHeader });
 
-        sheet.setCellRC(3, 1, "TOTALE PER CLUB", darkHeader);
-        sheet.mergeRC(3, 1, 3, 3, { style: darkHeader });
+        sheet.setCell([3, 1], "TOTALE PER CLUB", darkHeader);
+        sheet.merge([3, 1, 3, 3], { style: darkHeader });
 
         let currentCol = FIXED_COLS;
         for (const ma of macroareasWithSectors) {
           if (ma.sectors.length > 0) {
-            sheet.setCellRC(currentCol, 1, ma.name, darkHeader);
+            sheet.setCell([currentCol, 1], ma.name, darkHeader);
             if (ma.sectors.length > 1) {
-              sheet.mergeRC(currentCol, 1, currentCol + ma.sectors.length - 1, 1, {
+              sheet.merge([currentCol, 1, currentCol + ma.sectors.length - 1, 1], {
                 value: ma.name,
                 style: darkHeader,
               });
             }
             for (let si = 0; si < ma.sectors.length; si++) {
-              sheet.setCellRC(currentCol + si, 2, ma.sectors[si].name, subHeader);
+              sheet.setCell([currentCol + si, 2], ma.sectors[si].name, subHeader);
             }
             currentCol += ma.sectors.length;
           } else {
-            sheet.setCellRC(currentCol, 1, ma.name, darkHeader);
-            sheet.mergeRC(currentCol, 1, currentCol, 2, {
+            sheet.setCell([currentCol, 1], ma.name, darkHeader);
+            sheet.merge([currentCol, 1, currentCol, 2], {
               value: ma.name,
               style: darkHeader,
             });
@@ -163,14 +163,13 @@ export async function handler(options: AssignmentsOptions = {}): Promise<WriteRe
           }
         }
 
-        sheet.setCellRC(1, 3, "Richieste", darkHeader);
-        sheet.setCellRC(2, 3, "Distribuiti", darkHeader);
+        sheet.setCell([1, 3], "Richieste", darkHeader);
+        sheet.setCell([2, 3], "Distribuiti", darkHeader);
 
         for (let ci = 0; ci < dataCols; ci++) {
           const c = FIXED_COLS + ci;
-          sheet.setCellRC(
-            c,
-            3,
+          sheet.setCell(
+            [c, 3],
             { formula: `${cellRef(c, assignR + 1)}-${cellRef(c, availR + 1)}` },
             darkHeader,
           );
@@ -183,14 +182,13 @@ export async function handler(options: AssignmentsOptions = {}): Promise<WriteRe
           const clubId = clubNameToId.get(club.name);
           const fullClub = clubId ? clubsById.get(clubId) : undefined;
 
-          sheet.setCellRC(1, row, club.totalRequests > 0 ? club.totalRequests : "", dataCell);
-          sheet.setCellRC(
-            2,
-            row,
+          sheet.setCell([1, row], club.totalRequests > 0 ? club.totalRequests : "", dataCell);
+          sheet.setCell(
+            [2, row],
             F.sum(rangeRef(FIXED_COLS, row, FIXED_COLS + dataCols - 1, row)),
             dataCell,
           );
-          sheet.setCellRC(3, row, club.name, clubNameCell);
+          sheet.setCell([3, row], club.name, clubNameCell);
 
           for (let ci = 0; ci < orderedColumns.length; ci++) {
             const col = orderedColumns[ci];
@@ -207,7 +205,7 @@ export async function handler(options: AssignmentsOptions = {}): Promise<WriteRe
                 mockSeatRequests
                   .filter((r) => r.clubId === clubId && r.sectorId === col.sectorId)
                   .reduce((sum, r) => sum + r.quantity, 0) - sectorImaSeats.length;
-              sheet.setCellRC(c, row, requests > 0 ? requests : "", dataCell);
+              sheet.setCell([c, row], requests > 0 ? requests : "", dataCell);
             } else {
               const macroAreaImaSeats =
                 fullClub?.seats.filter(
@@ -222,22 +220,21 @@ export async function handler(options: AssignmentsOptions = {}): Promise<WriteRe
                     (r) => r.clubId === clubId && r.macroAreaId === col.macroareaId && !r.sectorId,
                   )
                   .reduce((sum, r) => sum + r.quantity, 0) - macroAreaImaSeats.length;
-              sheet.setCellRC(c, row, requests > 0 ? requests : "", dataCell);
+              sheet.setCell([c, row], requests > 0 ? requests : "", dataCell);
             }
           }
         }
 
-        sheet.setCellRC(3, assignR, "Assegnati:", footerLabel);
+        sheet.setCell([3, assignR], "Assegnati:", footerLabel);
         for (let ci = 0; ci < dataCols; ci++) {
           const c = FIXED_COLS + ci;
-          sheet.setCellRC(c, assignR, F.sum(colRange(c, dr + 1, drEnd + 1)), footerCell);
+          sheet.setCell([c, assignR], F.sum(colRange(c, dr + 1, drEnd + 1)), footerCell);
         }
 
-        sheet.setCellRC(3, availR, "Disponibili:", footerLabel);
+        sheet.setCell([3, availR], "Disponibili:", footerLabel);
         for (let ci = 0; ci < dataCols; ci++) {
-          sheet.setCellRC(
-            FIXED_COLS + ci,
-            availR,
+          sheet.setCell(
+            [FIXED_COLS + ci, availR],
             mockResultFreeSeats[ci]?.freeSeats ?? 0,
             footerCell,
           );
