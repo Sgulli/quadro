@@ -243,6 +243,8 @@ export async function handler(options: AssignmentsOptions = {}): Promise<WriteRe
           );
         }
 
+        sheet.freeze(DATA_ROW_START, FIXED_COLS - 1);
+
         sheet.colWidth("A", 14);
         sheet.colWidth("B", 14);
         sheet.colWidth("C", 28);
