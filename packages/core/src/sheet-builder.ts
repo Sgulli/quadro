@@ -46,8 +46,8 @@ installChartSupport();
 
 import type {
   AddImageRange,
-  AddSparklineGroupOptions,
   Addr,
+  AddSparklineGroupOptions,
   CellPrimitive,
   CellRange,
   CellStyle,
@@ -64,7 +64,6 @@ import type {
 } from "./types.js";
 import {
   applyStyle,
-  cellRef,
   colLetter,
   formatHeaderFooterSection,
   resolveAddr,

@@ -96,6 +96,8 @@ export type {
   AddLegendOptions,
   AddPieChartOptions,
   AddPlotAreaOptions,
+  // Overload helper types
+  Addr,
   AddScatterChartOptions,
   // Sparkline types
   AddSparklineGroupOptions,
@@ -112,17 +114,13 @@ export type {
   CellHyperlinkValueInput,
   // Cell value types
   CellPrimitive,
+  // Column / row / sheet
+  CellRange,
   CellRichTextValue,
   // Style types
   CellStyle,
   CellValue,
   ChartType,
-  // Overload helper types
-  Addr,
-  // Column / row / sheet
-  CellRange,
-  // Data validation
-  RangeValidationDef,
   ColumnDef,
   ExcelChartExPreset,
   ExcelChartPreset,
@@ -138,6 +136,8 @@ export type {
   NoteConfig,
   NoteText,
   NumberFormat,
+  // Data validation
+  RangeValidationDef,
   RichTextRun,
   RowData,
   RowOptions,
