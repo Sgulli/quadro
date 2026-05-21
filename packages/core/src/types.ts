@@ -254,3 +254,121 @@ export interface WriteResult {
   /** Approximate file size in bytes (-1 when streaming, size reported after flush) */
   sizeBytes: number;
 }
+
+// ─── Cell Value Types (re-exported from excelts) ─────────────────────────────
+
+export type RichTextRun = import("@cj-tech-master/excelts").RichText;
+export type CellRichTextValue = import("@cj-tech-master/excelts").CellRichTextValue;
+export type CellHyperlinkValue = import("@cj-tech-master/excelts").CellHyperlinkValue;
+export type CellHyperlinkValueInput = import("@cj-tech-master/excelts").CellHyperlinkValueInput;
+
+// ─── Image Types ─────────────────────────────────────────────────────────────
+
+export type ImageData = import("@cj-tech-master/excelts").ImageData;
+export type AddImageRange = import("@cj-tech-master/excelts").AddImageRange;
+export type WatermarkOptions = import("@cj-tech-master/excelts").WatermarkOptions;
+export type WatermarkMode = import("@cj-tech-master/excelts").WatermarkMode;
+
+// ─── Sparkline Types (defined locally; not exported from excelts index) ─────
+
+export interface SparklineColor {
+  theme?: number;
+  rgb?: string;
+  tint?: number;
+  auto?: boolean;
+}
+
+export interface Sparkline {
+  /** Data reference (e.g. "Sheet1!B2:G2") */
+  dataRef: string;
+  /** Anchor cell reference (e.g. "H2") */
+  cellRef: string;
+}
+
+export interface SparklineGroup {
+  type?: SparklineType;
+  lineWeight?: number;
+  markers?: boolean;
+  high?: boolean;
+  low?: boolean;
+  first?: boolean;
+  last?: boolean;
+  negative?: boolean;
+  displayXAxis?: boolean;
+  displayHidden?: boolean;
+  minAxisType?: SparklineAxisType;
+  maxAxisType?: SparklineAxisType;
+  manualMin?: number;
+  manualMax?: number;
+  rightToLeft?: boolean;
+  colorSeries?: SparklineColor;
+  colorNegative?: SparklineColor;
+  colorAxis?: SparklineColor;
+  colorMarkers?: SparklineColor;
+  colorFirst?: SparklineColor;
+  colorLast?: SparklineColor;
+  colorHigh?: SparklineColor;
+  colorLow?: SparklineColor;
+  dateAxis?: string;
+  sparklines: Sparkline[];
+}
+
+export type SparklineType = "line" | "column" | "stacked";
+
+export type SparklineAxisType = "individual" | "group" | "custom";
+
+export interface AddSparklineGroupOptions {
+  type: SparklineType;
+  sparklines: Sparkline[];
+  lineWeight?: number;
+  markers?: boolean;
+  high?: boolean;
+  low?: boolean;
+  first?: boolean;
+  last?: boolean;
+  negative?: boolean;
+  lineColor?: string;
+  negativeColor?: string;
+  axisColor?: string;
+  markerColor?: string;
+  highColor?: string;
+  lowColor?: string;
+  firstColor?: string;
+  lastColor?: string;
+  minAxisType?: SparklineAxisType;
+  maxAxisType?: SparklineAxisType;
+  manualMin?: number;
+  manualMax?: number;
+  displayXAxis?: boolean;
+  rightToLeft?: boolean;
+  displayEmptyCellsAs?: "gap" | "zero" | "span";
+  dateAxis?: string;
+}
+
+// ─── Chart Types (from excelts chart sub-module) ────────────────────────────
+
+export type ChartType = import("@cj-tech-master/excelts/chart").ChartType;
+export type AddChartRange = import("@cj-tech-master/excelts/chart").AddChartRange;
+export type AddChartOptions = import("@cj-tech-master/excelts/chart").AddChartOptions;
+export type AddBarChartOptions = import("@cj-tech-master/excelts/chart").AddBarChartOptions;
+export type AddPieChartOptions = import("@cj-tech-master/excelts/chart").AddPieChartOptions;
+export type AddScatterChartOptions = import("@cj-tech-master/excelts/chart").AddScatterChartOptions;
+export type AddSurfaceChartOptions = import("@cj-tech-master/excelts/chart").AddSurfaceChartOptions;
+export type AddComboChartOptions = import("@cj-tech-master/excelts/chart").AddComboChartOptions;
+export type AddChartExOptions = import("@cj-tech-master/excelts/chart").AddChartExOptions;
+export type AddChartSeriesOptions = import("@cj-tech-master/excelts/chart").AddChartSeriesOptions;
+export type AddAxisOptions = import("@cj-tech-master/excelts/chart").AddAxisOptions;
+export type AddDataLabelsOptions = import("@cj-tech-master/excelts/chart").AddDataLabelsOptions;
+export type AddChartMarkerOptions = import("@cj-tech-master/excelts/chart").AddChartMarkerOptions;
+export type AddTrendlineOptions = import("@cj-tech-master/excelts/chart").AddTrendlineOptions;
+export type AddErrorBarsOptions = import("@cj-tech-master/excelts/chart").AddErrorBarsOptions;
+export type AddDataPointOptions = import("@cj-tech-master/excelts/chart").AddDataPointOptions;
+export type AddTitleOptions = import("@cj-tech-master/excelts/chart").AddTitleOptions;
+export type AddLegendOptions = import("@cj-tech-master/excelts/chart").AddLegendOptions;
+export type AddPlotAreaOptions = import("@cj-tech-master/excelts/chart").AddPlotAreaOptions;
+export type AddChartFromTableOptions =
+  import("@cj-tech-master/excelts/chart").AddChartFromTableOptions;
+export type SeriesFromColumnsOptions =
+  import("@cj-tech-master/excelts/chart").SeriesFromColumnsOptions;
+export type ExcelChartPreset = import("@cj-tech-master/excelts/chart").ExcelChartPreset;
+export type ExcelChartExPreset = import("@cj-tech-master/excelts/chart").ExcelChartExPreset;

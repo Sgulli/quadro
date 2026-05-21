@@ -1,6 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
-import { type DefinedNameModel, Workbook as ExcelWorkbook } from "@cj-tech-master/excelts";
+import {
+  type DefinedNameModel,
+  Workbook as ExcelWorkbook,
+  type ImageData,
+} from "@cj-tech-master/excelts";
 import { SheetBuilder } from "./sheet-builder.js";
 import type { SheetOptions, WorkbookOptions, WriteResult } from "./types.js";
 import { colLetter } from "./utils.js";
@@ -182,6 +186,11 @@ export class WorkbookBuilder {
   /** Get all defined names. */
   getDefinedNames(): DefinedNameModel[] {
     return this._wb.definedNames.getAllEntries();
+  }
+
+  /** Add an image to the workbook and return its numeric id. */
+  addImage(image: ImageData): number {
+    return this._wb.addImage(image);
   }
 
   private async _finalizeAll(): Promise<void> {

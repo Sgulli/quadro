@@ -33,15 +33,15 @@
 - [x] CLI commands exposed via `pnpm cli` / `pnpm example`
 - [x] assignments.ts rewritten with pure numeric coordinates
 
-## v0.4 — Named Ranges, Tables & Charting
+## v0.4 — Named Ranges, Tables & Charting ✅ (2026-05-21)
 
 - [x] Named Ranges / Defined Names
 - [x] Tables (structured references, totals row, banded rows, table styles)
-- [ ] Charts API (bar, line, pie, scatter, bubble, radar, stock, surface, waterfall, treemap, sunburst, funnel, histogram, pareto, boxWhisker, regionMap, combo)
-- [ ] Sparklines (in-cell mini charts)
-- [ ] Images (embed PNG/JPEG in cells, backgrounds, watermarks)
-- [ ] Hyperlinks
-- [ ] Rich Text (mixed bold/italic/color within a single cell)
+- [x] Charts API (bar, line, pie, scatter, bubble, radar, stock, surface, waterfall, treemap, sunburst, funnel, histogram, pareto, boxWhisker, regionMap, combo)
+- [x] Sparklines (in-cell mini charts)
+- [x] Images (embed PNG/JPEG in cells, backgrounds, watermarks)
+- [x] Hyperlinks
+- [x] Rich Text (mixed bold/italic/color within a single cell)
 
 ## v0.5 — Comments, Controls & Sheet Management
 
