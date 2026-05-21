@@ -5,7 +5,7 @@ import {
   Workbook as ExcelWorkbook,
   type ImageData,
 } from "@cj-tech-master/excelts";
-import { SheetBuilder } from "./sheet-builder.js";
+import { SheetBuilder, _sheetFinalizers } from "./sheet-builder.js";
 import type { SheetOptions, WorkbookOptions, WriteResult } from "./types.js";
 import { colLetter } from "./utils.js";
 
@@ -24,14 +24,7 @@ export class WorkbookBuilder {
     const resolved = path.resolve(filePath);
     const wb = new ExcelWorkbook();
     await wb.xlsx.readFile(resolved);
-    const builder = new WorkbookBuilder();
-    builder._wb = wb;
-    for (let i = 0; i < wb.worksheets.length; i++) {
-      const ws = wb.getWorksheet(i + 1);
-      if (!ws) continue;
-      builder._sheets.push(new SheetBuilder(ws, { name: wb.worksheets[i]?.name }));
-    }
-    return builder;
+    return WorkbookBuilder._withWb(wb);
   }
 
   static fromFile(filePath: string): Promise<WorkbookBuilder> {
@@ -41,42 +34,48 @@ export class WorkbookBuilder {
   static async fromCsv(data: string | ArrayBuffer): Promise<WorkbookBuilder> {
     const wb = new ExcelWorkbook();
     await wb.readCsv(data);
-    const builder = new WorkbookBuilder();
-    builder._wb = wb;
-    for (let i = 0; i < wb.worksheets.length; i++) {
-      const ws = wb.getWorksheet(i + 1);
-      if (!ws) continue;
-      builder._sheets.push(new SheetBuilder(ws, { name: wb.worksheets[i].name }));
-    }
-    return builder;
+    return WorkbookBuilder._withWb(wb);
   }
 
   static async fromCsvFile(filePath: string): Promise<WorkbookBuilder> {
     const wb = new ExcelWorkbook();
     await wb.readCsvFile(filePath);
+    return WorkbookBuilder._withWb(wb);
+  }
+
+  private static _withWb(wb: ExcelWorkbook): WorkbookBuilder {
     const builder = new WorkbookBuilder();
     builder._wb = wb;
     for (let i = 0; i < wb.worksheets.length; i++) {
       const ws = wb.getWorksheet(i + 1);
       if (!ws) continue;
-      builder._sheets.push(new SheetBuilder(ws, { name: wb.worksheets[i].name }));
+      builder._sheets.push(
+        new SheetBuilder(ws, { name: wb.worksheets[i]?.name ?? `Sheet${i + 1}` }),
+      );
     }
     return builder;
   }
 
-  addSheet(opts: SheetOptions, configure: (sheet: SheetBuilder) => void): this;
-  addSheet(opts: SheetOptions): SheetBuilder;
-  addSheet(opts: SheetOptions, configure?: (sheet: SheetBuilder) => void): this | SheetBuilder {
+  addSheet(opts: SheetOptions, configure: (sheet: SheetBuilder) => void): this {
     const ws = this._wb.addWorksheet(opts.name);
     const builder = new SheetBuilder(ws, opts);
     this._sheets.push(builder);
 
     if (configure) {
       configure(builder);
-      return this;
     }
 
-    return builder;
+    return this;
+  }
+
+  getSheet(name: string): SheetBuilder | undefined {
+    return this._sheets.find((s) => s.name === name);
+  }
+
+  sheet(index: number): SheetBuilder {
+    const s = this._sheets[index];
+    if (!s) throw new Error(`[WorkbookBuilder] No sheet at index ${index}.`);
+    return s;
   }
 
   async write(outputPath: string): Promise<WriteResult> {
@@ -114,12 +113,12 @@ export class WorkbookBuilder {
     return Buffer.from(buf);
   }
 
-  async toCsv(outputPath?: string): Promise<string | undefined> {
-    if (outputPath) {
-      await this._wb.writeCsvFile(path.resolve(outputPath));
-      return;
-    }
+  async toCsvString(): Promise<string> {
     return this._wb.writeCsv();
+  }
+
+  async writeCsv(outputPath: string): Promise<void> {
+    await this._wb.writeCsvFile(path.resolve(outputPath));
   }
 
   private _safeResolve(filePath: string): string {
@@ -199,7 +198,7 @@ export class WorkbookBuilder {
   }
 
   private async _finalizeAll(): Promise<void> {
-    await Promise.all(this._sheets.map((s) => s._finalize()));
+    await Promise.all(this._sheets.map((s) => _sheetFinalizers.get(s)?.()));
   }
 
   private _applyWorkbookMeta(): void {

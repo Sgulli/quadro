@@ -138,6 +138,20 @@ export function formatHeaderFooterSection(section: HeaderFooterSection): string 
     .join("");
 }
 
+// ─── Overload resolvers ──────────────────────────────────────────────────────
+
+import type { Addr, CellRange } from "./types.js";
+
+/** Resolve an `Addr` to an A1 string. */
+export function resolveAddr(addr: Addr): string {
+  return Array.isArray(addr) ? cellRef(addr[0], addr[1]) : addr;
+}
+
+/** Resolve a `CellRange` to an A1 range string. */
+export function resolveRange(range: CellRange): string {
+  return Array.isArray(range) ? rangeRef(range[0], range[1], range[2], range[3]) : range;
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 import type { Color } from "./types.js";

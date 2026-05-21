@@ -90,4 +90,5 @@ export const F = {
   div,
   pct,
   if: ifExpr,
+  ifExpr,
 } as const;

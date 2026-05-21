@@ -181,11 +181,31 @@ describe("WorkbookBuilder", () => {
     expect(typeof builder.workbook.addWorksheet).toBe("function");
   });
 
-  it("addSheet without callback returns SheetBuilder", () => {
+  it("addSheet with callback returns this for chaining", () => {
     const builder = new WorkbookBuilder();
-    const sheet = builder.addSheet({ name: "Imperative" });
-    expect(typeof sheet.setCell).toBe("function");
-    expect(typeof sheet.addRow).toBe("function");
+    const result = builder.addSheet({ name: "Imperative" }, (sheet) => {
+      sheet.setCell("A1", "hello");
+    });
+    expect(result).toBe(builder);
+    expect(builder.sheets[0]).toBeDefined();
+    expect(typeof builder.sheets[0].setCell).toBe("function");
+  });
+
+  it("getSheet retrieves a sheet by name", () => {
+    const builder = new WorkbookBuilder();
+    builder.addSheet({ name: "Data" }, () => {});
+    expect(builder.getSheet("Data")).toBeDefined();
+    expect(builder.getSheet("Data")?.name).toBe("Data");
+    expect(builder.getSheet("Missing")).toBeUndefined();
+  });
+
+  it("sheet retrieves a sheet by index", () => {
+    const builder = new WorkbookBuilder();
+    builder.addSheet({ name: "First" }, () => {});
+    builder.addSheet({ name: "Second" }, () => {});
+    expect(builder.sheet(0).name).toBe("First");
+    expect(builder.sheet(1).name).toBe("Second");
+    expect(() => builder.sheet(99)).toThrow("No sheet at index");
   });
 
   it("tabColor applies to sheet", async () => {
@@ -302,7 +322,7 @@ describe("WorkbookBuilder", () => {
     expect(result.sizeBytes).toBeGreaterThan(0);
   });
 
-  it("returns toCsv as string", async () => {
+  it("toCsvString returns csv as string", async () => {
     const csv = await new WorkbookBuilder()
       .addSheet({ name: "Data" }, (sheet) => {
         sheet
@@ -316,14 +336,14 @@ describe("WorkbookBuilder", () => {
             { name: "Bob", age: 25 },
           ]);
       })
-      .toCsv();
+      .toCsvString();
 
     expect(typeof csv).toBe("string");
     expect(csv).toContain("Alice");
     expect(csv).toContain("30");
   });
 
-  it("toCsv writes to file", async () => {
+  it("writeCsv writes to file", async () => {
     await new WorkbookBuilder()
       .addSheet({ name: "Data" }, (sheet) => {
         sheet
@@ -331,7 +351,7 @@ describe("WorkbookBuilder", () => {
 
           .addRow({ x: 42 });
       })
-      .toCsv(outputPath("test-out.csv"));
+      .writeCsv(outputPath("test-out.csv"));
 
     expect(fs.existsSync(outputPath("test-out.csv"))).toBe(true);
   });

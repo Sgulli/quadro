@@ -71,10 +71,10 @@ describe("SheetBuilder", () => {
     });
   });
 
-  describe("setCell / setCellRC", () => {
-    it("setCellRC delegates with cellRef", () => {
+  describe("setCell", () => {
+    it("accepts a tuple address", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
-      sheet.setCellRC(4, 5, 42);
+      sheet.setCell([4, 5], 42);
       expect(ws.getCell("D5").value).toBe(42);
     });
 
@@ -103,7 +103,7 @@ describe("SheetBuilder", () => {
     });
   });
 
-  describe("styleRange / styleRangeRC", () => {
+  describe("styleRange", () => {
     it("applies style to a range", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       sheet.setCell("A1", "a");
@@ -122,7 +122,7 @@ describe("SheetBuilder", () => {
     });
   });
 
-  describe("merge / mergeRC", () => {
+  describe("merge", () => {
     it("merges cells and writes value", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       vi.spyOn(ws, "mergeCells");
@@ -132,10 +132,10 @@ describe("SheetBuilder", () => {
       expect(ws.getCell("A1").font?.bold).toBe(true);
     });
 
-    it("mergeRC delegates with rangeRef", () => {
+    it("accepts a tuple range", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       vi.spyOn(ws, "mergeCells");
-      sheet.mergeRC(1, 1, 3, 1, { value: "Title" });
+      sheet.merge([1, 1, 3, 1], { value: "Title" });
       expect(ws.mergeCells).toHaveBeenCalledWith("A1:C1");
     });
   });
@@ -155,13 +155,24 @@ describe("SheetBuilder", () => {
   });
 
   describe("freeze", () => {
-    it("sets freeze pane", () => {
+    it("sets freeze pane with positional args", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       sheet.freeze(3);
       const view = ws.views?.[0] ?? null;
       expect(view?.state).toBe("frozen");
       if (view?.state === "frozen") {
         expect(view.ySplit).toBe(3);
+      }
+    });
+
+    it("sets freeze pane with object overload", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.freeze({ row: 2, col: 1 });
+      const view = ws.views?.[0] ?? null;
+      expect(view?.state).toBe("frozen");
+      if (view?.state === "frozen") {
+        expect(view.ySplit).toBe(2);
+        expect(view.xSplit).toBe(1);
       }
     });
   });
@@ -288,7 +299,11 @@ describe("SheetBuilder", () => {
     it("addRangeValidation with between operator", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       vi.spyOn(ws.dataValidations, "add");
-      sheet.addRangeValidation("D1:D10", "whole", "between", [1, 100]);
+      sheet.addRangeValidation("D1:D10", {
+        type: "whole",
+        operator: "between",
+        formulae: [1, 100],
+      });
       expect(ws.dataValidations.add).toHaveBeenCalledWith("D1:D10", {
         type: "whole",
         operator: "between",
@@ -299,7 +314,12 @@ describe("SheetBuilder", () => {
     it("addRangeValidation forwards options", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       vi.spyOn(ws.dataValidations, "add");
-      sheet.addRangeValidation("E1", "decimal", "lessThan", [50], { error: "Too high" });
+      sheet.addRangeValidation("E1", {
+        type: "decimal",
+        operator: "lessThan",
+        formulae: [50],
+        error: "Too high",
+      });
       expect(ws.dataValidations.add).toHaveBeenCalledWith("E1", {
         type: "decimal",
         operator: "lessThan",
@@ -445,28 +465,32 @@ describe("SheetBuilder", () => {
     });
   });
 
-  describe("data validation RC", () => {
-    it("addDataValidationRC delegates with cellRef", () => {
+  describe("data validation with tuples", () => {
+    it("addDataValidation accepts tuple address", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       vi.spyOn(ws.dataValidations, "add");
-      sheet.addDataValidationRC(3, 5, { type: "any" });
+      sheet.addDataValidation([3, 5], { type: "any" });
       expect(ws.dataValidations.add).toHaveBeenCalledWith("C5", { type: "any" });
     });
 
-    it("addListValidationRC delegates with colRange", () => {
+    it("addListValidation accepts tuple range", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       vi.spyOn(ws.dataValidations, "add");
-      sheet.addListValidationRC(2, 3, 10, ["X", "Y"]);
+      sheet.addListValidation([2, 3, 2, 10], ["X", "Y"]);
       expect(ws.dataValidations.add).toHaveBeenCalledWith("B3:B10", {
         type: "list",
         formulae: ['"X"', '"Y"'],
       });
     });
 
-    it("addRangeValidationRC delegates with colRange", () => {
+    it("addRangeValidation accepts tuple range", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       vi.spyOn(ws.dataValidations, "add");
-      sheet.addRangeValidationRC(4, 2, 100, "whole", "between", [1, 100]);
+      sheet.addRangeValidation([4, 2, 4, 100], {
+        type: "whole",
+        operator: "between",
+        formulae: [1, 100],
+      });
       expect(ws.dataValidations.add).toHaveBeenCalledWith("D2:D100", {
         type: "whole",
         operator: "between",
@@ -475,91 +499,91 @@ describe("SheetBuilder", () => {
     });
   });
 
-  describe("conditional formatting RC", () => {
-    it("addCellIsRuleRC delegates with rangeRef", () => {
+  describe("conditional formatting with tuples", () => {
+    it("addCellIsRule accepts tuple range", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       vi.spyOn(ws, "addConditionalFormatting");
-      sheet.addCellIsRuleRC(2, 3, 4, 10, "greaterThan", [100]);
+      sheet.addCellIsRule([2, 3, 4, 10], "greaterThan", [100]);
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "B3:D10",
         rules: [{ type: "cellIs", operator: "greaterThan", formulae: [100] }],
       });
     });
 
-    it("addExpressionRuleRC delegates with rangeRef", () => {
+    it("addExpressionRule accepts tuple range", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       vi.spyOn(ws, "addConditionalFormatting");
-      sheet.addExpressionRuleRC(1, 1, 5, 5, "A1>0");
+      sheet.addExpressionRule([1, 1, 5, 5], "A1>0");
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "A1:E5",
         rules: [{ type: "expression", formulae: ["A1>0"] }],
       });
     });
 
-    it("addDataBarRC delegates with rangeRef", () => {
+    it("addDataBar accepts tuple range", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       vi.spyOn(ws, "addConditionalFormatting");
-      sheet.addDataBarRC(2, 2, 2, 20);
+      sheet.addDataBar([2, 2, 2, 20]);
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "B2:B20",
         rules: [{ type: "dataBar" }],
       });
     });
 
-    it("addColorScaleRC delegates with rangeRef", () => {
+    it("addColorScale accepts tuple range", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       vi.spyOn(ws, "addConditionalFormatting");
-      sheet.addColorScaleRC(3, 1, 3, 10, [{ type: "min" }, { type: "max" }]);
+      sheet.addColorScale([3, 1, 3, 10], [{ type: "min" }, { type: "max" }]);
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "C1:C10",
         rules: [{ type: "colorScale", cfvo: [{ type: "min" }, { type: "max" }] }],
       });
     });
 
-    it("addIconSetRC delegates with rangeRef", () => {
+    it("addIconSet accepts tuple range", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       vi.spyOn(ws, "addConditionalFormatting");
-      sheet.addIconSetRC(4, 1, 4, 10, "3TrafficLights1");
+      sheet.addIconSet([4, 1, 4, 10], "3TrafficLights1");
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "D1:D10",
         rules: [{ type: "iconSet", iconSet: "3TrafficLights1" }],
       });
     });
 
-    it("addTop10RuleRC delegates with rangeRef", () => {
+    it("addTop10Rule accepts tuple range", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       vi.spyOn(ws, "addConditionalFormatting");
-      sheet.addTop10RuleRC(5, 1, 5, 10, 5);
+      sheet.addTop10Rule([5, 1, 5, 10], 5);
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "E1:E10",
         rules: [{ type: "top10", rank: 5, percent: false }],
       });
     });
 
-    it("addAboveAverageRuleRC delegates with rangeRef", () => {
+    it("addAboveAverageRule accepts tuple range", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       vi.spyOn(ws, "addConditionalFormatting");
-      sheet.addAboveAverageRuleRC(6, 1, 6, 10);
+      sheet.addAboveAverageRule([6, 1, 6, 10]);
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "F1:F10",
         rules: [{ type: "aboveAverage" }],
       });
     });
 
-    it("addContainsTextRuleRC delegates with rangeRef", () => {
+    it("addContainsTextRule accepts tuple range", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       vi.spyOn(ws, "addConditionalFormatting");
-      sheet.addContainsTextRuleRC(7, 1, 7, 10, "urgent");
+      sheet.addContainsTextRule([7, 1, 7, 10], "urgent");
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "G1:G10",
         rules: [{ type: "containsText", text: "urgent" }],
       });
     });
 
-    it("addTimePeriodRuleRC delegates with rangeRef", () => {
+    it("addTimePeriodRule accepts tuple range", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       vi.spyOn(ws, "addConditionalFormatting");
-      sheet.addTimePeriodRuleRC(8, 1, 8, 10, "thisMonth");
+      sheet.addTimePeriodRule([8, 1, 8, 10], "thisMonth");
       expect(ws.addConditionalFormatting).toHaveBeenCalledWith({
         ref: "H1:H10",
         rules: [{ type: "timePeriod", timePeriod: "thisMonth" }],
@@ -602,10 +626,10 @@ describe("SheetBuilder", () => {
       });
     });
 
-    it("addTableRC delegates with rangeRef", () => {
+    it("addTable accepts tuple range", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       vi.spyOn(ws, "addTable");
-      sheet.addTableRC("Data", 1, 1, 3, 10, [{ name: "A" }, { name: "B" }, { name: "C" }]);
+      sheet.addTable("Data", [1, 1, 3, 10], [{ name: "A" }, { name: "B" }, { name: "C" }]);
       expect(ws.addTable).toHaveBeenCalled();
       const args = vi.mocked(ws.addTable).mock.calls[0][0];
       expect(args).toMatchObject({ name: "Data", ref: "A1:C10" });
@@ -637,10 +661,10 @@ describe("SheetBuilder", () => {
       expect(cell.hyperlink).toBe("https://example.com");
     });
 
-    it("setCellHyperlinkRC delegates with cellRef", () => {
+    it("setCellHyperlink accepts tuple address", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       vi.spyOn(ws, "getCell");
-      sheet.setCellHyperlinkRC(3, 5, "https://example.com");
+      sheet.setCellHyperlink([3, 5], "https://example.com");
       expect(ws.getCell).toHaveBeenCalledWith("C5");
     });
 
@@ -648,7 +672,7 @@ describe("SheetBuilder", () => {
       const { sheet } = makeSheet({ name: "Test" });
       const result = sheet
         .setCellHyperlink("A1", "https://a.com")
-        .setCellHyperlinkRC(2, 1, "https://b.com");
+        .setCellHyperlink([2, 1], "https://b.com");
       expect(result).toBe(sheet);
     });
   });
@@ -661,25 +685,11 @@ describe("SheetBuilder", () => {
       expect(cell.note).toBeDefined();
     });
 
-    it("addNoteRC delegates with cellRef", () => {
+    it("addNote accepts tuple address", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       vi.spyOn(ws, "getCell");
-      sheet.addNoteRC(2, 3, "Note text");
+      sheet.addNote([2, 3], "Note text");
       expect(ws.getCell).toHaveBeenCalledWith("B3");
-    });
-
-    it("addComment sets note text", () => {
-      const { ws, sheet } = makeSheet({ name: "Test" });
-      sheet.addComment("A1", "Reviewed by John");
-      const cell = ws.getCell("A1");
-      expect(cell.note).toBeDefined();
-    });
-
-    it("addCommentRC delegates with cellRef", () => {
-      const { ws, sheet } = makeSheet({ name: "Test" });
-      vi.spyOn(ws, "getCell");
-      sheet.addCommentRC(1, 1, "Simple note");
-      expect(ws.getCell).toHaveBeenCalledWith("A1");
     });
 
     it("addThreadedComment pushes to ws.threadedComments", () => {
@@ -691,7 +701,7 @@ describe("SheetBuilder", () => {
 
     it("methods are chainable", () => {
       const { sheet } = makeSheet({ name: "Test" });
-      const result = sheet.addNote("A1", "Note 1").addNoteRC(2, 2, "Note 2");
+      const result = sheet.addNote("A1", "Note 1").addNote([2, 2], "Note 2");
       expect(result).toBe(sheet);
     });
   });
@@ -704,10 +714,10 @@ describe("SheetBuilder", () => {
       expect(cell.value).toBeDefined();
     });
 
-    it("setCellRichTextRC delegates with cellRef", () => {
+    it("setCellRichText accepts tuple address", () => {
       const { ws, sheet } = makeSheet({ name: "Test" });
       vi.spyOn(ws, "getCell");
-      sheet.setCellRichTextRC(1, 5, [{ text: "Test" }]);
+      sheet.setCellRichText([1, 5], [{ text: "Test" }]);
       expect(ws.getCell).toHaveBeenCalledWith("A5");
     });
 
