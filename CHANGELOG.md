@@ -1,29 +1,51 @@
 # Changelog
 
-## 0.4.1 (2026-05-30)
+All notable changes to this project will be documented in this file.
 
-- Codebase reorganization: source files and tests moved into subdirectories (`builders/`, `coords/`, `formulas/`, `styles/`, `schema/`, `mixins/`)
-- Removed unsafe casts and inlined import types
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.4.0 (2026-05-28)
+## [2.0.0] - 2026-05-30
 
-- Schema-first sheet definitions: `defineSheet()` with typed `Schema.*` field builders (`text`, `number`, `date`, `boolean`, `enum`, `currency`, `percent`)
-- `SchemaDefinition` and `InferRowType<T>` — fully-typed sheet schemas with automatic type inference
-- `validateRow()` — runtime validation with type checks, min/max bounds, enum membership
-- `schemaToColumnDefs()` — convert schema to column definitions with auto-width and default styles
-- `ColumnMap` / `ColumnRef` — typed column references with `.letter()`, `.index()`, `.range()`, `.cell()`, `.toColumnDef()`
-- `createColumnMap()` — build column maps from schema definitions
-- `RangeBuilder` — fluent range operations: `.style()`, `.validation()`, `.cellIs()`, `.dataBar()`, `.iconSet()`, `.top10()`, `.aboveAverage()`, `.containsText()`, `.timePeriod()`, `.expression()`, `.colorScale()`, `.merge()`, `.formula()`
-- `sheet.range()` — entry point for fluent range API on any `SheetBuilder`
-- `Range` namespace — `Range.cell()`, `Range.column()`, `Range.rect()`, `Range.fromTuple()`, `Range.fullColumn()`, `Range.row()`, `Range.offset()`, `Range.expand()`
-- `col()` and `row()` semantic helpers — intuitive range construction
-- `FormulaNode` / `Expr` / `Formula` — typed formula AST for composable formula expressions
-- Exported all chart-related types from `@cj-tech-master/excelts/chart`
-- Exported `ConditionalFormattingOptions`, `ConditionalFormattingRule`, and additional ExcelTS types
-- `SheetBuilder.addSparklineGroup()` — sparkline support
-- `SheetBuilder.setCell()` now directly accepts `[col, row]` tuples
+### Added
 
-## 0.3.0 (2026-05-20)
+- **Schema-first sheet definitions** with `defineSheet()` API
+  - `Schema.text()`, `Schema.number()`, `Schema.date()`, `Schema.boolean()`, `Schema.enum()`, `Schema.currency()`, `Schema.percent()` field builders
+  - `SchemaDefinition` and `InferRowType<T>` for fully-typed sheet schemas
+  - `validateRow()` for runtime validation with type checks, min/max bounds, enum membership
+  - `schemaToColumnDefs()` to convert schema to column definitions with auto-width and default styles
+- **Typed column references** with `ColumnMap` / `ColumnRef`
+  - `.letter()`, `.index()`, `.range()`, `.cell()`, `.toColumnDef()` methods
+  - `createColumnMap()` factory function
+- **Fluent range operations** with `RangeBuilder`
+  - `.style()`, `.validation()`, `.cellIs()`, `.dataBar()`, `.iconSet()`, `.top10()`, `.aboveAverage()`, `.containsText()`, `.timePeriod()`, `.expression()`, `.colorScale()`, `.merge()`, `.formula()`
+  - `sheet.range()` entry point for fluent range API
+- **Range namespace** for semantic coordinate helpers
+  - `Range.cell()`, `Range.column()`, `Range.rect()`, `Range.fromTuple()`, `Range.fullColumn()`, `Range.row()`, `Range.offset()`, `Range.expand()`
+  - `col()` and `row()` helper functions
+- **Typed formula AST** with `FormulaNode` / `Expr` / `Formula`
+  - Composable formula expressions with type safety
+  - `Formula.sum()`, `Formula.avg()`, `Formula.if()`, `Formula.raw()` and more
+
+### Changed
+
+- **BREAKING**: Reorganized source files into subdirectories
+  - `builders/` - WorkbookBuilder, SheetBuilder, RangeBuilder, ColumnMap
+  - `coords/` - Coordinate utilities and Range namespace
+  - `formulas/` - Formula helpers and AST
+  - `styles/` - Style system and presets
+  - `schema/` - Schema-first definitions
+  - `mixins/` - SheetBuilder extensions
+- **BREAKING**: Removed unsafe casts and inlined import types
+- **BREAKING**: `defineColumns()` now returns `ColumnMap` instead of array
+- Improved type safety throughout the codebase
+- Updated documentation with new APIs and examples
+
+### Removed
+
+- **BREAKING**: Removed `utils.ts` barrel file (imports should use specific modules)
+
+## [0.3.0] - 2026-05-20
 
 - Data validation: `sheet.addDataValidation()`, `sheet.addListValidation()`, `sheet.addRangeValidation()`
 - Conditional formatting: `sheet.addConditionalFormatting()`, `sheet.addCellIsRule()`, `sheet.addExpressionRule()`
@@ -51,7 +73,7 @@
 - `sheet.removeDataValidation()` to remove validation rules
 - Updated `@quadro/core` README with RC API docs, package managers, author attribution
 
-## 0.2.0 (unreleased)
+## [0.2.0] - unreleased
 
 - Workbook reading: `WorkbookBuilder.load()`, `WorkbookBuilder.fromFile()`
 - Sheet-to-JSON: `sheet.toJSON()`, `sheet.toAOA()`, `sheet.addJSON()`, `sheet.addAOA()`
@@ -61,7 +83,7 @@
 - Path containment via `allowedBase` option
 - CLI now has lint + test scripts and handler tests
 
-## 0.1.0 (unreleased)
+## [0.1.0] - unreleased
 
 - Initial release of `@quadro/core`
 - Workbook builder with fluent API
