@@ -58,7 +58,19 @@ export class WorkbookBuilder {
   }
 
   addSheet(opts: SheetOptions, configure: (sheet: SheetBuilder) => void): this {
-    const ws = this._wb.addWorksheet(opts.name);
+    const name = opts.name;
+    if (!name || name.length > 31) {
+      throw new Error(`[WorkbookBuilder] Sheet name "${name}" exceeds 31 characters or is empty.`);
+    }
+    if (/[*?:\\/[\]]/.test(name)) {
+      throw new Error(
+        `[WorkbookBuilder] Sheet name "${name}" contains invalid characters (*?:\\/[]).`,
+      );
+    }
+    if (this.getSheet(name)) {
+      throw new Error(`[WorkbookBuilder] A sheet named "${name}" already exists.`);
+    }
+    const ws = this._wb.addWorksheet(name);
     const builder = new SheetBuilder(ws, opts);
     this._sheets.push(builder);
 

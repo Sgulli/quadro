@@ -78,13 +78,13 @@
 - [ ] PDF export from Excel
 - [x] Markdown table import/export
 
-## v0.8 — DX & Design Improvements
+## v0.8 — DX & Design Improvements ✅ (2026-05-30)
 
-- [ ] `style()` deep-merge fills consistently with font/border
-- [ ] `_finalizeAll()` use `Promise.allSettled` with error collection
-- [ ] Row-level error handling in `addRows()`
-- [ ] Sheet name validation with user-facing messages
-- [ ] `freeze()` preserve existing view state reliably
+- [x] `style()` deep-merge fills consistently with font/border
+- [x] `_finalizeAll()` use `Promise.allSettled` with error collection
+- [x] Row-level error handling in `addRows()`
+- [x] Sheet name validation with user-facing messages
+- [x] `freeze()` preserve existing view state reliably
 - [ ] JSDoc for all public exports
 
 ## v1.0 — Ship
