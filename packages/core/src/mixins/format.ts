@@ -48,7 +48,7 @@ export function applyMerge(
   const cell = ws.getCell(tl);
   if (value) {
     if (isFormula(value)) {
-      (cell as unknown as { value: object }).value = toFormulaValue(value);
+      cell.value = toFormulaValue(value);
     } else {
       cell.value = value;
     }

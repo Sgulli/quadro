@@ -58,14 +58,14 @@ export function defineSheet<T extends SchemaDefinition>(
       if (allErrors.length > 0) {
         throw new Error(`[defineSheet] Validation failed:\n${allErrors.join("\n")}`);
       }
-      return sheet.addRows(rows as unknown as RowData[]);
+      return sheet.addRows(rows as RowData[]);
     },
     addRow(row: InferRowType<T>): SheetBuilder {
       const errors = validateRow(row as Record<string, unknown>, schema, 1);
       if (errors.length > 0) {
         throw new Error(`[defineSheet] Validation failed:\n${errors.join("\n")}`);
       }
-      return sheet.addRow(row as unknown as RowData);
+      return sheet.addRow(row as RowData);
     },
   };
 }

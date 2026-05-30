@@ -1,5 +1,5 @@
 import { cellRef, colLetter } from "../coords/coords.js";
-import type { CellStyle, ColumnDef } from "../types.js";
+import type { CellStyle, ColumnDef, NumberFormat } from "../types.js";
 
 export interface ColumnSchema {
   header?: string;
@@ -7,7 +7,7 @@ export interface ColumnSchema {
   style?: CellStyle;
   headerStyle?: CellStyle;
   hidden?: boolean;
-  format?: string;
+  format?: NumberFormat;
 }
 
 export type ColumnSchemaMap = Record<string, ColumnSchema>;
@@ -57,7 +57,7 @@ export class ColumnRef {
       style: this._schema.style,
       headerStyle: this._schema.headerStyle,
       hidden: this._schema.hidden,
-      format: this._schema.format as ColumnDef["format"],
+      format: this._schema.format,
     };
   }
 }
@@ -70,7 +70,7 @@ export function createColumnMap<T extends ColumnSchemaMap>(
   schema: T,
   state: () => SheetState,
 ): ColumnMap<T> {
-  const map = {} as Record<string, ColumnRef>;
+  const map: Record<string, ColumnRef> = {};
   let idx = 1;
   for (const [key, def] of Object.entries(schema)) {
     map[key] = new ColumnRef(key, idx, def, state);

@@ -36,7 +36,7 @@ import type {
   SheetOptions,
 } from "../types.js";
 import { type ColumnMap, type ColumnSchemaMap, createColumnMap } from "./column-map.js";
-import { RangeBuilder } from "./range-builder.js";
+import { RangeBuilder, type SheetLike } from "./range-builder.js";
 
 export const _sheetFinalizers = new WeakMap<SheetBuilder, () => Promise<void>>();
 
@@ -103,9 +103,7 @@ export class SheetBuilder {
       rowCount: this._rowCount,
       headerWritten: this._headerWritten,
     }));
-    this._columns = Object.values(map).map((ref) =>
-      (ref as import("./column-map.js").ColumnRef).toColumnDef(),
-    );
+    this._columns = Object.values(map).map((ref) => ref.toColumnDef());
     return map;
   }
 
@@ -250,7 +248,7 @@ export class SheetBuilder {
 
   /** Create a RangeBuilder for fluent range operations (style, validation, conditional formatting). */
   range(spec: CellRange): RangeBuilder {
-    return new RangeBuilder(this as unknown as import("./range-builder.js").SheetLike, spec);
+    return new RangeBuilder(this as SheetLike, spec);
   }
 
   /** Add a structured table to the sheet. */
@@ -513,7 +511,8 @@ export class SheetBuilder {
 
   /** Write a formula string into a specific cell by A1 reference. */
   fillFormula(refStr: string, formula: string): this {
-    (this._ws.getCell(refStr) as { value: { formula: string } }).value = { formula };
+    const cell = this._ws.getCell(refStr);
+    cell.value = { formula } as ExcelCellValue;
     return this;
   }
 
