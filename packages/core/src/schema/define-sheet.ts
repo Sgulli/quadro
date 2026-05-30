@@ -1,9 +1,9 @@
-import { type ColumnMap, createColumnMap } from "./column-map.js";
-import type { InferRowType, SchemaDefinition } from "./schema.js";
-import { schemaToColumnDefs, validateRow } from "./schema.js";
-import type { SheetBuilder } from "./sheet-builder.js";
-import type { CellStyle, RowData } from "./types.js";
-import type { WorkbookBuilder } from "./workbook-builder.js";
+import { type ColumnMap, createColumnMap } from "../builders/column-map.js";
+import type { SheetBuilder } from "../builders/sheet-builder.js";
+import type { WorkbookBuilder } from "../builders/workbook-builder.js";
+import type { CellStyle, RowData } from "../types.js";
+import type { InferRowType, SchemaDefinition } from "./fields.js";
+import { schemaToColumnDefs, validateRow } from "./fields.js";
 
 export interface DefinedSheet<T extends SchemaDefinition> {
   sheet: SheetBuilder;

@@ -1,4 +1,4 @@
-import type { CellPrimitive, FormulaValue } from "./types.js";
+import type { CellPrimitive, FormulaValue } from "../types.js";
 
 export type FormulaNode =
   | { kind: "call"; name: string; args: FormulaNode[] }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { defineSheet } from "../define-sheet.js";
-import { Schema, validateRow } from "../schema.js";
-import { WorkbookBuilder } from "../workbook-builder.js";
+import { WorkbookBuilder } from "../../builders/workbook-builder.js";
+import { defineSheet } from "../../schema/define-sheet.js";
+import { Schema, validateRow } from "../../schema/fields.js";
 
 describe("Schema field builders", () => {
   it("creates text field", () => {

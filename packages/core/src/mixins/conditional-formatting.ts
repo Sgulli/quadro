@@ -15,10 +15,10 @@ import type {
   TimePeriodTypes,
   Top10RuleType,
 } from "@cj-tech-master/excelts";
-import { resolveRange } from "../coords.js";
+import { resolveRange } from "../coords/coords.js";
 import type { CellRange, SheetBuilderExtension } from "../types.js";
 
-declare module "../sheet-builder.js" {
+declare module "../builders/sheet-builder.js" {
   interface SheetBuilder {
     addConditionalFormatting(cf: ConditionalFormattingOptions): this;
     removeConditionalFormatting(

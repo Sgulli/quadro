@@ -1,5 +1,5 @@
-import { cellRef, colLetter } from "./coords.js";
-import type { CellStyle, ColumnDef } from "./types.js";
+import { cellRef, colLetter } from "../coords/coords.js";
+import type { CellStyle, ColumnDef } from "../types.js";
 
 export interface ColumnSchema {
   header?: string;

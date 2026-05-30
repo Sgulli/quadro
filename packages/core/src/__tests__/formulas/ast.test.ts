@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { Formula } from "../formula-ast.js";
-import { WorkbookBuilder } from "../workbook-builder.js";
+import { WorkbookBuilder } from "../../builders/workbook-builder.js";
+import { Formula } from "../../formulas/ast.js";
 
 describe("Formula AST — basic nodes", () => {
   it("creates a ref node", () => {

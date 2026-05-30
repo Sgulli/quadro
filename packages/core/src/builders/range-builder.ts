@@ -8,8 +8,8 @@ import type {
   IconSetTypes,
   TimePeriodTypes,
 } from "@cj-tech-master/excelts";
-import { resolveRange } from "./coords.js";
-import type { CellRange, CellStyle, CellValue, RangeValidationDef } from "./types.js";
+import { resolveRange } from "../coords/coords.js";
+import type { CellRange, CellStyle, CellValue, RangeValidationDef } from "../types.js";
 
 export interface SheetLike {
   styleRange(range: CellRange, style: CellStyle): unknown;

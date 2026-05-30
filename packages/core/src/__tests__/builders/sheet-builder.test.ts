@@ -1,7 +1,7 @@
 import { Workbook } from "@cj-tech-master/excelts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { SheetBuilder } from "../sheet-builder.js";
-import type { NoteConfig, SheetOptions } from "../types.js";
+import { SheetBuilder } from "../../builders/sheet-builder.js";
+import type { NoteConfig, SheetOptions } from "../../types.js";
 
 function makeSheet(opts: SheetOptions) {
   const wb = new Workbook();

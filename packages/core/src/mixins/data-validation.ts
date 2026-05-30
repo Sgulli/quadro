@@ -1,8 +1,8 @@
 import type { DataValidation, DataValidationWithFormulae } from "@cj-tech-master/excelts";
-import { resolveAddr, resolveRange } from "../coords.js";
+import { resolveAddr, resolveRange } from "../coords/coords.js";
 import type { Addr, CellRange, RangeValidationDef, SheetBuilderExtension } from "../types.js";
 
-declare module "../sheet-builder.js" {
+declare module "../builders/sheet-builder.js" {
   interface SheetBuilder {
     addDataValidation(addr: Addr, validation: DataValidation): this;
     removeDataValidation(address: string): this;

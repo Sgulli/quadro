@@ -1,6 +1,6 @@
 import type { CellFormulaValue } from "@cj-tech-master/excelts";
-import { colLetter } from "./coords.js";
-import type { CellPrimitive, CellValue, FormulaValue } from "./types.js";
+import { colLetter } from "../coords/coords.js";
+import type { CellPrimitive, CellValue, FormulaValue } from "../types.js";
 
 type Ref = string | number;
 

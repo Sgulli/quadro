@@ -6,7 +6,7 @@ import type {
   Fill as ExcelFill,
   Font as ExcelFont,
 } from "@cj-tech-master/excelts";
-import type { Color } from "./types.js";
+import type { Color } from "../types.js";
 import {
   type Alignment,
   type Border,
@@ -17,7 +17,7 @@ import {
   type Font,
   type HeaderFooterSection,
   type NumberFormat,
-} from "./types.js";
+} from "../types.js";
 
 function normalizeArgb(hex: string): string {
   const clean = hex.replace(/^#/, "");

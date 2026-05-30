@@ -1,4 +1,4 @@
-import type { CellStyle, ColumnDef, NumberFormat } from "./types.js";
+import type { CellStyle, ColumnDef, NumberFormat } from "../types.js";
 
 export interface SchemaFieldBase {
   width?: number;

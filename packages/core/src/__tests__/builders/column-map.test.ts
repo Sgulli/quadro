@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { WorkbookBuilder } from "../workbook-builder.js";
+import { WorkbookBuilder } from "../../builders/workbook-builder.js";
 
 describe("SheetBuilder.defineColumns()", () => {
   it("returns a ColumnMap with correct indices", () => {

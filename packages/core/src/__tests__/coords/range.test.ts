@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { col, Range, row } from "../range.js";
+import { col, Range, row } from "../../coords/range.js";
 
 describe("col()", () => {
   it("converts number to column letter", () => {

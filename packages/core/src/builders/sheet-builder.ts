@@ -14,16 +14,14 @@ import { installChartSupport } from "@cj-tech-master/excelts/chart";
 
 installChartSupport();
 
-import { type ColumnMap, type ColumnSchemaMap, createColumnMap } from "./column-map.js";
-import { colLetter, resolveAddr, resolveRange } from "./coords.js";
-import { isFormula, toExcelValue, toFormulaValue } from "./formulas.js";
-import { applyChartMixin } from "./mixins/charts.js";
-import { applyConditionalFormattingMixin } from "./mixins/conditional-formatting.js";
-import { applyDataValidationMixin } from "./mixins/data-validation.js";
-import { applyAutoFilter, applyFreeze, applyMerge, applyStyleRange } from "./mixins/format.js";
-import { applyMediaMixin } from "./mixins/media.js";
-import { RangeBuilder } from "./range-builder.js";
-import { applyStyle, formatHeaderFooterSection } from "./style-presets.js";
+import { colLetter, resolveAddr, resolveRange } from "../coords/coords.js";
+import { isFormula, toExcelValue, toFormulaValue } from "../formulas/helpers.js";
+import { applyChartMixin } from "../mixins/charts.js";
+import { applyConditionalFormattingMixin } from "../mixins/conditional-formatting.js";
+import { applyDataValidationMixin } from "../mixins/data-validation.js";
+import { applyAutoFilter, applyFreeze, applyMerge, applyStyleRange } from "../mixins/format.js";
+import { applyMediaMixin } from "../mixins/media.js";
+import { applyStyle, formatHeaderFooterSection } from "../styles/presets.js";
 import type {
   Addr,
   CellRange,
@@ -36,7 +34,9 @@ import type {
   RowOptions,
   SheetBuilderExtension,
   SheetOptions,
-} from "./types.js";
+} from "../types.js";
+import { type ColumnMap, type ColumnSchemaMap, createColumnMap } from "./column-map.js";
+import { RangeBuilder } from "./range-builder.js";
 
 export const _sheetFinalizers = new WeakMap<SheetBuilder, () => Promise<void>>();
 
