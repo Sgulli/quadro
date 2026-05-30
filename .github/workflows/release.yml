@@ -50,7 +50,7 @@ jobs:
       - run: pnpm turbo run typecheck test build
 
       - name: Publish @qquadro/core
-        run: pnpm -F @qquadro/core publish --provenance --no-git-checks
+        run: pnpm -F @qquadro/core publish --no-git-checks
 
       - uses: softprops/action-gh-release@v2
         with:
