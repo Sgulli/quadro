@@ -637,4 +637,30 @@ describe("WorkbookBuilder", () => {
       expect(result.sizeBytes).toBeGreaterThan(0);
     });
   });
+
+  // ── v0.8: Sheet Name Validation ─────────────────────────────────────────────
+
+  describe("sheet name validation", () => {
+    it("rejects name longer than 31 chars", () => {
+      expect(() => new WorkbookBuilder().addSheet({ name: "A".repeat(32) }, () => {})).toThrow(
+        "exceeds 31",
+      );
+    });
+    it("rejects name with invalid characters", () => {
+      expect(() => new WorkbookBuilder().addSheet({ name: "Sheet[1]" }, () => {})).toThrow(
+        "invalid characters",
+      );
+    });
+    it("rejects duplicate sheet name", () => {
+      expect(() =>
+        new WorkbookBuilder()
+          .addSheet({ name: "Same" }, () => {})
+          .addSheet({ name: "Same" }, () => {}),
+      ).toThrow("already exists");
+    });
+    it("accepts valid short name", () => {
+      const wb = new WorkbookBuilder().addSheet({ name: "Valid" }, () => {});
+      expect(wb.getSheet("Valid")).toBeDefined();
+    });
+  });
 });
