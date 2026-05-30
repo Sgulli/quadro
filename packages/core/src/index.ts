@@ -42,6 +42,8 @@ export { WorkbookBuilder } from "./workbook-builder.js";
 
 // ── Formula helpers ───────────────────────────────────────────────────────────
 
+export type { FormulaNode } from "./formula-ast.js";
+export { Expr, Formula } from "./formula-ast.js";
 export {
   add,
   average,
