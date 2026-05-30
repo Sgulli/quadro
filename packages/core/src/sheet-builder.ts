@@ -1,74 +1,39 @@
 import type {
-  AboveAverageRuleType,
   AddAOAOptions,
   AddJSONOptions,
-  CellFormulaValue,
-  CellHyperlinkValueInput,
-  CellIsOperators,
-  CellIsRuleType,
-  CellRichTextValue,
-  ColorScaleRuleType,
-  ConditionalFormattingOptions,
-  ContainsTextOperators,
-  ContainsTextRuleType,
-  DataBarRuleType,
-  DataValidation,
-  DataValidationWithFormulae,
   Cell as ExcelCell,
   CellValue as ExcelCellValue,
   Row as ExcelRow,
-  Style as ExcelStyle,
   Worksheet as ExcelWorksheet,
-  ExpressionRuleType,
-  IconSetRuleType,
-  IconSetTypes,
   SheetToJSONOptions,
   TableColumnProperties,
   TableStyleProperties,
-  TimePeriodRuleType,
-  TimePeriodTypes,
-  Top10RuleType,
   WorksheetView,
 } from "@cj-tech-master/excelts";
-import type {
-  AddBarChartOptions,
-  AddChartExOptions,
-  AddChartOptions,
-  AddChartRange,
-  AddComboChartOptions,
-  AddPieChartOptions,
-  AddScatterChartOptions,
-  AddSurfaceChartOptions,
-} from "@cj-tech-master/excelts/chart";
 import { installChartSupport } from "@cj-tech-master/excelts/chart";
 
 installChartSupport();
 
+import { colLetter, resolveAddr, resolveRange } from "./coords.js";
+import { isFormula, toExcelValue, toFormulaValue } from "./formulas.js";
+import { applyChartMixin } from "./mixins/charts.js";
+import { applyConditionalFormattingMixin } from "./mixins/conditional-formatting.js";
+import { applyDataValidationMixin } from "./mixins/data-validation.js";
+import { applyMediaMixin } from "./mixins/media.js";
+import { applyStyle, formatHeaderFooterSection } from "./style-presets.js";
 import type {
-  AddImageRange,
   Addr,
-  AddSparklineGroupOptions,
-  CellPrimitive,
   CellRange,
   CellStyle,
   CellValue,
   ColumnDef,
+  IgnoredErrorDef,
   MergeRange,
-  RangeValidationDef,
-  RichTextRun,
   RowData,
   RowOptions,
+  SheetBuilderExtension,
   SheetOptions,
-  ThreadedComment,
-  WatermarkOptions,
 } from "./types.js";
-import {
-  applyStyle,
-  colLetter,
-  formatHeaderFooterSection,
-  resolveAddr,
-  resolveRange,
-} from "./utils.js";
 
 export const _sheetFinalizers = new WeakMap<SheetBuilder, () => Promise<void>>();
 
@@ -81,7 +46,6 @@ export class SheetBuilder {
   private _rowCount = 0;
   private _columnsInferred = false;
 
-  /** Current number of data rows written (excludes header row). */
   get rowCount(): number {
     return this._rowCount;
   }
@@ -90,13 +54,10 @@ export class SheetBuilder {
     return this._opts.name;
   }
 
-  /**
-   * Resolve a column key to a range string like `"B2:B5"`.
-   * Automatically accounts for header row when headers were written.
-   * @param key ColumnDef key
-   * @param startRow First data row (defaults to 1 if no headers, 2 after header row)
-   */
-  /** Get the 1‑based column index for a column key. */
+  get worksheet(): ExcelWorksheet {
+    return this._ws;
+  }
+
   columnIndex(key: string): number {
     const col = this._columns.find((c) => c.key === key);
     if (!col) throw new Error(`[SheetBuilder] No column with key "${key}".`);
@@ -131,37 +92,10 @@ export class SheetBuilder {
     return this;
   }
 
-  /** Set column definitions and write the header row in one call. */
   headers(defs: ColumnDef[], globalStyle?: CellStyle, height?: number): this {
     this._columns = defs;
     this._writeHeaders(globalStyle, height);
     return this;
-  }
-
-  private _writeHeaders(globalStyle?: CellStyle, height?: number): void {
-    if (this._headerWritten) {
-      throw new Error(`[SheetBuilder] headers() already called on sheet "${this._opts.name}".`);
-    }
-    if (this._columns.length === 0) {
-      throw new Error(`[SheetBuilder] headers() requires at least one column definition.`);
-    }
-
-    const row = this._ws.addRow(this._columns.map((c) => c.header));
-    row.eachCell((cell, colNumber) => {
-      const col = this._columns[colNumber - 1];
-      if (globalStyle) applyStyle(cell, globalStyle);
-      if (col?.headerStyle) applyStyle(cell, col.headerStyle);
-    });
-    row.commit();
-    if (height) row.height = height;
-
-    this._headerWritten = true;
-
-    this._ws.columns = this._columns.map((c) => ({
-      key: c.key,
-      width: c.width ?? 15,
-      hidden: c.hidden ?? false,
-    }));
   }
 
   addRow(data: RowData, options?: RowOptions): this {
@@ -176,12 +110,35 @@ export class SheetBuilder {
     sharedOptions?: RowOptions,
   ): this {
     if (rows.length === 0) return this;
+    const errors: Array<{ index: number; error: Error }> = [];
     if ("data" in rows[0]) {
-      for (const item of rows as Array<{ data: RowData; options?: RowOptions }>) {
-        this.addRow(item.data, item.options);
+      for (let i = 0; i < rows.length; i++) {
+        const item = rows[i] as { data: RowData; options?: RowOptions };
+        try {
+          this.addRow(item.data, item.options);
+        } catch (e) {
+          errors.push({
+            index: i,
+            error: e instanceof Error ? e : new Error(String(e)),
+          });
+        }
       }
     } else {
-      for (const data of rows as RowData[]) this.addRow(data, sharedOptions);
+      for (let i = 0; i < rows.length; i++) {
+        try {
+          this.addRow(rows[i] as RowData, sharedOptions);
+        } catch (e) {
+          errors.push({
+            index: i,
+            error: e instanceof Error ? e : new Error(String(e)),
+          });
+        }
+      }
+    }
+    if (errors.length > 0) {
+      throw new Error(
+        `[SheetBuilder] Failed to add ${errors.length} of ${rows.length} rows:\n${errors.map((e) => `  row[${e.index}]: ${e.error.message}`).join("\n")}`,
+      );
     }
     return this;
   }
@@ -254,7 +211,6 @@ export class SheetBuilder {
     return this;
   }
 
-  /** Set column width by 1‑based column number. */
   autoFitColumns(startCol?: number | string, endCol?: number | string): this {
     this._ws.autoFitColumns(startCol, endCol);
     return this;
@@ -266,9 +222,10 @@ export class SheetBuilder {
     const col: number = typeof rowOrOpts === "object" ? (rowOrOpts.col ?? 0) : maybeCol;
     const row: number = typeof rowOrOpts === "object" ? (rowOrOpts.row ?? 0) : rowOrOpts;
     const prev = this._ws.views?.[0];
+    const { state: _, style: _1, ...rest } = prev ?? {};
     this._ws.views = [
       {
-        ...(prev ? { showGridLines: prev.showGridLines, zoomScale: prev.zoomScale } : {}),
+        ...rest,
         state: "frozen",
         xSplit: col,
         ySplit: row,
@@ -284,186 +241,6 @@ export class SheetBuilder {
     this._ws.autoFilter = r;
     return this;
   }
-
-  // ── Data Validation ─────────────────────────────────────────────────────────
-
-  addDataValidation(addr: Addr, validation: DataValidation): this {
-    this._ws.dataValidations.add(resolveAddr(addr), validation);
-    return this;
-  }
-
-  removeDataValidation(address: string): this {
-    this._ws.dataValidations.remove(address);
-    return this;
-  }
-
-  addListValidation(
-    range: CellRange,
-    list: (string | number | Date)[],
-    options?: Omit<DataValidationWithFormulae, "type" | "formulae" | "operator">,
-  ): this {
-    this._ws.dataValidations.add(resolveRange(range), {
-      type: "list",
-      formulae: list.map(formatListValue),
-      ...options,
-    });
-    return this;
-  }
-
-  addRangeValidation(range: CellRange, validation: RangeValidationDef): this {
-    this._ws.dataValidations.add(resolveRange(range), validation);
-    return this;
-  }
-
-  // ── Conditional Formatting ─────────────────────────────────────────────────
-
-  addConditionalFormatting(cf: ConditionalFormattingOptions): this {
-    this._ws.addConditionalFormatting(cf);
-    return this;
-  }
-
-  removeConditionalFormatting(
-    filter?:
-      | number
-      | ((
-          value: ConditionalFormattingOptions,
-          index: number,
-          array: ConditionalFormattingOptions[],
-        ) => boolean),
-  ): this {
-    this._ws.removeConditionalFormatting(filter);
-    return this;
-  }
-
-  addCellIsRule(
-    range: CellRange,
-    operator: CellIsOperators,
-    formulae: (string | number)[],
-    style?: Partial<ExcelStyle>,
-  ): this {
-    const rule: CellIsRuleType = { type: "cellIs", operator, formulae };
-    if (style) rule.style = style;
-    this._ws.addConditionalFormatting({ ref: resolveRange(range), rules: [rule] });
-    return this;
-  }
-
-  addExpressionRule(range: CellRange, formula: string, style?: Partial<ExcelStyle>): this {
-    const rule: ExpressionRuleType = {
-      type: "expression",
-      formulae: [formula],
-    };
-    if (style) rule.style = style;
-    this._ws.addConditionalFormatting({ ref: resolveRange(range), rules: [rule] });
-    return this;
-  }
-
-  addDataBar(range: CellRange, color?: { argb?: string; theme?: number }): this {
-    const rule: DataBarRuleType = { type: "dataBar" };
-    if (color) rule.color = color;
-    this._ws.addConditionalFormatting({ ref: resolveRange(range), rules: [rule] });
-    return this;
-  }
-
-  addColorScale(
-    range: CellRange,
-    cfvo: {
-      type: "min" | "max" | "num" | "percent" | "percentile" | "formula";
-      value?: number | string;
-    }[],
-    colors?: { argb?: string; theme?: number }[],
-  ): this {
-    const rule: ColorScaleRuleType = {
-      type: "colorScale",
-      cfvo,
-      color: colors,
-    };
-    this._ws.addConditionalFormatting({ ref: resolveRange(range), rules: [rule] });
-    return this;
-  }
-
-  addIconSet(
-    range: CellRange,
-    iconSet?: IconSetTypes,
-    cfvo?: {
-      type: "percent" | "num" | "percentile" | "formula";
-      value?: number | string;
-    }[],
-    options?: { showValue?: boolean; reverse?: boolean },
-  ): this {
-    const rule: IconSetRuleType = {
-      type: "iconSet",
-      iconSet,
-      cfvo,
-      ...options,
-    };
-    this._ws.addConditionalFormatting({ ref: resolveRange(range), rules: [rule] });
-    return this;
-  }
-
-  addTop10Rule(
-    range: CellRange,
-    rank: number,
-    options?: {
-      percent?: boolean;
-      bottom?: boolean;
-      style?: Partial<ExcelStyle>;
-    },
-  ): this {
-    const rule: Top10RuleType = {
-      type: "top10",
-      rank,
-      percent: options?.percent ?? false,
-      bottom: options?.bottom,
-    };
-    if (options?.style) rule.style = options.style;
-    this._ws.addConditionalFormatting({ ref: resolveRange(range), rules: [rule] });
-    return this;
-  }
-
-  addAboveAverageRule(
-    range: CellRange,
-    options?: { aboveAverage?: boolean; style?: Partial<ExcelStyle> },
-  ): this {
-    const rule: AboveAverageRuleType = {
-      type: "aboveAverage",
-      aboveAverage: options?.aboveAverage,
-    };
-    if (options?.style) rule.style = options.style;
-    this._ws.addConditionalFormatting({ ref: resolveRange(range), rules: [rule] });
-    return this;
-  }
-
-  addContainsTextRule(
-    range: CellRange,
-    text: string,
-    operator?: ContainsTextOperators,
-    style?: Partial<ExcelStyle>,
-  ): this {
-    const rule: ContainsTextRuleType = {
-      type: "containsText",
-      operator,
-      text,
-    };
-    if (style) rule.style = style;
-    this._ws.addConditionalFormatting({ ref: resolveRange(range), rules: [rule] });
-    return this;
-  }
-
-  addTimePeriodRule(
-    range: CellRange,
-    timePeriod: TimePeriodTypes,
-    style?: Partial<ExcelStyle>,
-  ): this {
-    const rule: TimePeriodRuleType = {
-      type: "timePeriod",
-      timePeriod,
-    };
-    if (style) rule.style = style;
-    this._ws.addConditionalFormatting({ ref: resolveRange(range), rules: [rule] });
-    return this;
-  }
-
-  // ── Tables ──────────────────────────────────────────────────────────────────
 
   addTable(
     name: string,
@@ -488,175 +265,57 @@ export class SheetBuilder {
     return this;
   }
 
-  // ── Comments / Notes ─────────────────────────────────────────────────────────
-
-  addNote(addr: Addr, text: string): this {
-    this._ws.getCell(resolveAddr(addr)).note = text;
+  insertRow(pos: number, data: CellValue[], options?: RowOptions): this {
+    const excelRow = this._ws.insertRow(pos, data.map(toExcelValue));
+    if (options) {
+      if (options.height !== undefined) excelRow.height = options.height;
+      if (options.hidden) excelRow.hidden = true;
+      if (options.outlineLevel !== undefined) excelRow.outlineLevel = options.outlineLevel;
+      if (options.style) {
+        excelRow.eachCell({ includeEmpty: true }, (cell) => applyStyle(cell, options.style));
+      }
+    }
+    excelRow.commit();
+    this._rowCount++;
     return this;
   }
 
-  addThreadedComment(ref: string, comment: ThreadedComment): this {
-    const entry: { ref: string; comment: ThreadedComment } = {
-      ref,
-      comment: { ...comment, date: comment.date ?? new Date().toISOString() },
-    };
-    this._ws.threadedComments.push(entry);
+  duplicateRow(rowNum: number, count: number, insert?: boolean): this {
+    this._ws.duplicateRow(rowNum, count, insert);
+    this._rowCount += count;
     return this;
   }
 
-  // ── Hyperlinks ──────────────────────────────────────────────────────────────
-
-  setCellHyperlink(addr: Addr, hyperlink: string, text?: string, tooltip?: string): this {
-    const cell = this._ws.getCell(resolveAddr(addr));
-    cell.value = { text: text ?? hyperlink, hyperlink, tooltip } as CellHyperlinkValueInput;
+  removeRow(start: number, count: number): this {
+    this._ws.spliceRows(start, count);
+    this._rowCount = Math.max(0, this._rowCount - count);
     return this;
   }
 
-  // ── Rich Text ───────────────────────────────────────────────────────────────
-
-  setCellRichText(addr: Addr, richText: RichTextRun[]): this {
-    const cell = this._ws.getCell(resolveAddr(addr));
-    cell.value = { richText } as CellRichTextValue;
+  insertColumn(start: number, count: number, ...inserts: ExcelCellValue[][]): this {
+    this._ws.spliceColumns(start, count, ...inserts);
     return this;
   }
 
-  // ── Images ──────────────────────────────────────────────────────────────────
-
-  addImage(imageId: string | number, range: AddImageRange): this {
-    this._ws.addImage(imageId, range);
+  removeColumn(start: number, count: number): this {
+    this._ws.spliceColumns(start, count);
     return this;
   }
 
-  addBackgroundImage(imageId: string | number): this {
-    this._ws.addBackgroundImage(imageId);
+  addPageBreak(rowNum: number): this {
+    this._ws.getRow(rowNum).addPageBreak();
     return this;
   }
 
-  addWatermark(options: WatermarkOptions): this {
-    this._ws.addWatermark(options);
+  addColumnPageBreak(colNum: number): this {
+    this._ws.getColumn(colNum).addPageBreak();
     return this;
   }
 
-  removeWatermark(): this {
-    this._ws.removeWatermark();
+  addIgnoredError(ref: string, options?: Omit<IgnoredErrorDef, "ref">): this {
+    this._ws.ignoredErrors.push({ ref, ...options });
     return this;
   }
-
-  // ── Sparklines ──────────────────────────────────────────────────────────────
-
-  addSparklineGroup(options: AddSparklineGroupOptions): this {
-    this._ws.addSparklineGroup(options);
-    return this;
-  }
-
-  // ── Charts ──────────────────────────────────────────────────────────────────
-
-  addChart(options: AddChartOptions, range: AddChartRange): this {
-    this._ws.addChart(options, range);
-    return this;
-  }
-
-  addColumnChart(options: Omit<AddBarChartOptions, "type" | "barDir">, range: AddChartRange): this {
-    this._ws.addColumnChart(options, range);
-    return this;
-  }
-
-  addBarChart(options: Omit<AddBarChartOptions, "type" | "barDir">, range: AddChartRange): this {
-    this._ws.addBarChart(options, range);
-    return this;
-  }
-
-  addLineChart(options: Omit<AddChartOptions, "type">, range: AddChartRange): this {
-    this._ws.addLineChart(options, range);
-    return this;
-  }
-
-  addAreaChart(options: Omit<AddChartOptions, "type">, range: AddChartRange): this {
-    this._ws.addAreaChart(options, range);
-    return this;
-  }
-
-  addPieChart(options: Omit<AddPieChartOptions, "type">, range: AddChartRange): this {
-    this._ws.addPieChart(options, range);
-    return this;
-  }
-
-  addDoughnutChart(options: Omit<AddPieChartOptions, "type">, range: AddChartRange): this {
-    this._ws.addDoughnutChart(options, range);
-    return this;
-  }
-
-  addScatterChart(options: Omit<AddScatterChartOptions, "type">, range: AddChartRange): this {
-    this._ws.addScatterChart(options, range);
-    return this;
-  }
-
-  addBubbleChart(options: Omit<AddChartOptions, "type">, range: AddChartRange): this {
-    this._ws.addBubbleChart(options, range);
-    return this;
-  }
-
-  addRadarChart(options: Omit<AddChartOptions, "type">, range: AddChartRange): this {
-    this._ws.addRadarChart(options, range);
-    return this;
-  }
-
-  addStockChart(options: Omit<AddChartOptions, "type">, range: AddChartRange): this {
-    this._ws.addStockChart(options, range);
-    return this;
-  }
-
-  addSurfaceChart(options: Omit<AddSurfaceChartOptions, "type">, range: AddChartRange): this {
-    this._ws.addSurfaceChart(options, range);
-    return this;
-  }
-
-  addHistogramChart(options: Omit<AddChartExOptions, "type">, range: AddChartRange): this {
-    this._ws.addHistogramChart(options, range);
-    return this;
-  }
-
-  addParetoChart(options: Omit<AddChartExOptions, "type">, range: AddChartRange): this {
-    this._ws.addParetoChart(options, range);
-    return this;
-  }
-
-  addWaterfallChart(options: Omit<AddChartExOptions, "type">, range: AddChartRange): this {
-    this._ws.addWaterfallChart(options, range);
-    return this;
-  }
-
-  addFunnelChart(options: Omit<AddChartExOptions, "type">, range: AddChartRange): this {
-    this._ws.addFunnelChart(options, range);
-    return this;
-  }
-
-  addTreemapChart(options: Omit<AddChartExOptions, "type">, range: AddChartRange): this {
-    this._ws.addTreemapChart(options, range);
-    return this;
-  }
-
-  addSunburstChart(options: Omit<AddChartExOptions, "type">, range: AddChartRange): this {
-    this._ws.addSunburstChart(options, range);
-    return this;
-  }
-
-  addBoxWhiskerChart(options: Omit<AddChartExOptions, "type">, range: AddChartRange): this {
-    this._ws.addBoxWhiskerChart(options, range);
-    return this;
-  }
-
-  addRegionMapChart(options: Omit<AddChartExOptions, "type">, range: AddChartRange): this {
-    this._ws.addRegionMapChart(options, range);
-    return this;
-  }
-
-  addComboChart(options: AddComboChartOptions, range: AddChartRange): this {
-    this._ws.addComboChart(options, range);
-    return this;
-  }
-
-  // ── Reading / Export ───────────────────────────────────────────────────────
 
   eachRow(callback: (row: ExcelRow, rowNumber: number) => void): void {
     this._ws.eachRow(callback);
@@ -684,15 +343,37 @@ export class SheetBuilder {
     return this;
   }
 
-  // ── Finalization ───────────────────────────────────────────────────────────
-
   private async _doFinalize(): Promise<void> {
     if (this._protectionConfig) {
       await this._ws.protect(this._protectionConfig.password ?? "");
     }
   }
 
-  // ── Private helpers ────────────────────────────────────────────────────────
+  private _writeHeaders(globalStyle?: CellStyle, height?: number): void {
+    if (this._headerWritten) {
+      throw new Error(`[SheetBuilder] headers() already called on sheet "${this._opts.name}".`);
+    }
+    if (this._columns.length === 0) {
+      throw new Error(`[SheetBuilder] headers() requires at least one column definition.`);
+    }
+
+    const row = this._ws.addRow(this._columns.map((c) => c.header));
+    row.eachCell((cell, colNumber) => {
+      const col = this._columns[colNumber - 1];
+      if (globalStyle) applyStyle(cell, globalStyle);
+      if (col?.headerStyle) applyStyle(cell, col.headerStyle);
+    });
+    row.commit();
+    if (height) row.height = height;
+
+    this._headerWritten = true;
+
+    this._ws.columns = this._columns.map((c) => ({
+      key: c.key,
+      width: c.width ?? 15,
+      hidden: c.hidden ?? false,
+    }));
+  }
 
   private _applySheetOptions(): void {
     const opts = this._opts;
@@ -708,6 +389,9 @@ export class SheetBuilder {
       if (opts.showGridLines === false) view.showGridLines = false;
       if (opts.zoom !== undefined) view.zoomScale = opts.zoom;
       this._ws.views = [view];
+    }
+    if (opts.state) {
+      this._ws.state = opts.state;
     }
     if (opts.freeze) {
       const { row = 0, col = 0 } = opts.freeze;
@@ -731,6 +415,12 @@ export class SheetBuilder {
           footer: 0.3,
           ...opts.pageSetup.margins,
         };
+      }
+      if (opts.pageSetup.printTitlesRow) {
+        this._ws.pageSetup.printTitlesRow = opts.pageSetup.printTitlesRow;
+      }
+      if (opts.pageSetup.printTitlesColumn) {
+        this._ws.pageSetup.printTitlesColumn = opts.pageSetup.printTitlesColumn;
       }
     }
     if (opts.headerFooter) {
@@ -797,40 +487,8 @@ export class SheetBuilder {
   }
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatListValue(v: string | number | Date): string | number | Date {
-  if (typeof v === "string") return `"${v.replace(/"/g, '""')}"`;
-  if (v instanceof Date) {
-    const y = v.getFullYear();
-    const m = String(v.getMonth() + 1).padStart(2, "0");
-    const d = String(v.getDate()).padStart(2, "0");
-    return `"${y}-${m}-${d}"`;
-  }
-  return v;
-}
-
-function isFormula(val: CellValue): val is { formula: string; result?: CellPrimitive } {
-  return (
-    typeof val === "object" &&
-    val !== null &&
-    !(val instanceof Date) &&
-    "formula" in val &&
-    typeof (val as { formula: unknown }).formula === "string"
-  );
-}
-
-function normalizeFormula(f: string): string {
-  return f.startsWith("=") ? f.slice(1) : f;
-}
-
-function toFormulaValue(v: { formula: string; result?: CellPrimitive }): CellFormulaValue {
-  const fv: CellFormulaValue = { formula: normalizeFormula(v.formula) };
-  if (v.result !== undefined && v.result !== null) fv.result = v.result;
-  return fv;
-}
-
-function toExcelValue(val: CellValue): CellPrimitive | CellFormulaValue {
-  if (isFormula(val)) return toFormulaValue(val);
-  return val as CellPrimitive;
-}
+const proto = SheetBuilder.prototype as unknown as SheetBuilderExtension;
+applyChartMixin(proto);
+applyConditionalFormattingMixin(proto);
+applyDataValidationMixin(proto);
+applyMediaMixin(proto);

@@ -260,6 +260,10 @@ export interface SheetOptions {
       header?: number;
       footer?: number;
     };
+    /** Rows to repeat at top when printing, e.g. "1:3" */
+    printTitlesRow?: string;
+    /** Columns to repeat at left when printing, e.g. "A:C" */
+    printTitlesColumn?: string;
   };
   headerFooter?: SheetHeaderFooter;
   /** Whether the sheet is protected */
@@ -268,6 +272,8 @@ export interface SheetOptions {
   showGridLines?: boolean;
   /** Zoom level (10–400) */
   zoom?: number;
+  /** Sheet visibility state */
+  state?: "visible" | "hidden" | "veryHidden";
 }
 
 // ─── Workbook Options ────────────────────────────────────────────────────────
@@ -279,12 +285,25 @@ export interface WorkbookOptions {
   company?: string;
   /** Created date (defaults to now) */
   created?: Date;
+  /** Document title */
+  title?: string;
+  /** Document subject */
+  subject?: string;
+  /** Document keywords */
+  keywords?: string;
+  /** Document category */
+  category?: string;
+  /** Document manager */
+  manager?: string;
+  /** Document description */
+  description?: string;
+  /** Document language */
+  language?: string;
   /** Whether to use shared strings table (reduces file size for repeated strings) */
   useSharedStrings?: boolean;
   /**
    * Stream mode: write directly to a file path.
    * When set, the workbook operates in streaming mode for
-
    * memory-efficient output of large datasets.
    */
   useStreaming?: boolean;
@@ -315,24 +334,6 @@ export interface NoteConfig {
   editAs?: string;
   anchor?: string;
 }
-
-export type ThreadedComment = import("@cj-tech-master/excelts").ThreadedComment;
-export type ThreadedCommentPerson = import("@cj-tech-master/excelts").ThreadedCommentPerson;
-export type ThreadedCommentMention = import("@cj-tech-master/excelts").ThreadedCommentMention;
-
-// ─── Cell Value Types (re-exported from excelts) ─────────────────────────────
-
-export type RichTextRun = import("@cj-tech-master/excelts").RichText;
-export type CellRichTextValue = import("@cj-tech-master/excelts").CellRichTextValue;
-export type CellHyperlinkValue = import("@cj-tech-master/excelts").CellHyperlinkValue;
-export type CellHyperlinkValueInput = import("@cj-tech-master/excelts").CellHyperlinkValueInput;
-
-// ─── Image Types ─────────────────────────────────────────────────────────────
-
-export type ImageData = import("@cj-tech-master/excelts").ImageData;
-export type AddImageRange = import("@cj-tech-master/excelts").AddImageRange;
-export type WatermarkOptions = import("@cj-tech-master/excelts").WatermarkOptions;
-export type WatermarkMode = import("@cj-tech-master/excelts").WatermarkMode;
 
 // ─── Sparkline Types (defined locally; not exported from excelts index) ─────
 
@@ -410,30 +411,169 @@ export interface AddSparklineGroupOptions {
   dateAxis?: string;
 }
 
-// ─── Chart Types (from excelts chart sub-module) ────────────────────────────
+// ─── Ignored Errors ──────────────────────────────────────────────────────────
 
-export type ChartType = import("@cj-tech-master/excelts/chart").ChartType;
-export type AddChartRange = import("@cj-tech-master/excelts/chart").AddChartRange;
-export type AddChartOptions = import("@cj-tech-master/excelts/chart").AddChartOptions;
-export type AddBarChartOptions = import("@cj-tech-master/excelts/chart").AddBarChartOptions;
-export type AddPieChartOptions = import("@cj-tech-master/excelts/chart").AddPieChartOptions;
-export type AddScatterChartOptions = import("@cj-tech-master/excelts/chart").AddScatterChartOptions;
-export type AddSurfaceChartOptions = import("@cj-tech-master/excelts/chart").AddSurfaceChartOptions;
-export type AddComboChartOptions = import("@cj-tech-master/excelts/chart").AddComboChartOptions;
-export type AddChartExOptions = import("@cj-tech-master/excelts/chart").AddChartExOptions;
-export type AddChartSeriesOptions = import("@cj-tech-master/excelts/chart").AddChartSeriesOptions;
-export type AddAxisOptions = import("@cj-tech-master/excelts/chart").AddAxisOptions;
-export type AddDataLabelsOptions = import("@cj-tech-master/excelts/chart").AddDataLabelsOptions;
-export type AddChartMarkerOptions = import("@cj-tech-master/excelts/chart").AddChartMarkerOptions;
-export type AddTrendlineOptions = import("@cj-tech-master/excelts/chart").AddTrendlineOptions;
-export type AddErrorBarsOptions = import("@cj-tech-master/excelts/chart").AddErrorBarsOptions;
-export type AddDataPointOptions = import("@cj-tech-master/excelts/chart").AddDataPointOptions;
-export type AddTitleOptions = import("@cj-tech-master/excelts/chart").AddTitleOptions;
-export type AddLegendOptions = import("@cj-tech-master/excelts/chart").AddLegendOptions;
-export type AddPlotAreaOptions = import("@cj-tech-master/excelts/chart").AddPlotAreaOptions;
-export type AddChartFromTableOptions =
-  import("@cj-tech-master/excelts/chart").AddChartFromTableOptions;
-export type SeriesFromColumnsOptions =
-  import("@cj-tech-master/excelts/chart").SeriesFromColumnsOptions;
-export type ExcelChartPreset = import("@cj-tech-master/excelts/chart").ExcelChartPreset;
-export type ExcelChartExPreset = import("@cj-tech-master/excelts/chart").ExcelChartExPreset;
+export interface IgnoredErrorDef {
+  /** Cell reference range, e.g. "A1:B10" */
+  ref: string;
+  /** Ignore "Number Stored as Text" errors */
+  numberStoredAsText?: boolean;
+  /** Ignore formula errors */
+  formula?: boolean;
+  /** Ignore formula range errors */
+  formulaRange?: boolean;
+  /** Ignore unlocked formula errors */
+  unlockedFormula?: boolean;
+  /** Ignore empty cell reference errors */
+  emptyCellReference?: boolean;
+  /** Ignore list data validation errors */
+  listDataValidation?: boolean;
+  /** Ignore calculated column errors */
+  calculatedColumn?: boolean;
+  /** Ignore eval errors */
+  evalError?: boolean;
+  /** Ignore two-digit text year errors */
+  twoDigitTextYear?: boolean;
+}
+
+// ─── SheetBuilder Extension Interface ────────────────────────────────────────
+
+import type {
+  AddImageRange,
+  CellIsOperators,
+  ConditionalFormattingOptions,
+  ContainsTextOperators,
+  DataValidation,
+  DataValidationWithFormulae,
+  FormCheckbox as ExcelFormCheckbox,
+  Style as ExcelStyle,
+  FormCheckboxOptions,
+  FormControlRange,
+  IconSetTypes,
+  RichText as RichTextRun,
+  ThreadedComment,
+  TimePeriodTypes,
+  WatermarkOptions,
+} from "@cj-tech-master/excelts";
+import type {
+  AddBarChartOptions,
+  AddChartExOptions,
+  AddChartOptions,
+  AddChartRange,
+  AddComboChartOptions,
+  AddPieChartOptions,
+  AddScatterChartOptions,
+  AddSurfaceChartOptions,
+} from "@cj-tech-master/excelts/chart";
+
+export interface SheetBuilderExtension {
+  addChart(options: AddChartOptions, range: AddChartRange): unknown;
+  addColumnChart(
+    options: Omit<AddBarChartOptions, "type" | "barDir">,
+    range: AddChartRange,
+  ): unknown;
+  addBarChart(options: Omit<AddBarChartOptions, "type" | "barDir">, range: AddChartRange): unknown;
+  addLineChart(options: Omit<AddChartOptions, "type">, range: AddChartRange): unknown;
+  addAreaChart(options: Omit<AddChartOptions, "type">, range: AddChartRange): unknown;
+  addPieChart(options: Omit<AddPieChartOptions, "type">, range: AddChartRange): unknown;
+  addDoughnutChart(options: Omit<AddPieChartOptions, "type">, range: AddChartRange): unknown;
+  addScatterChart(options: Omit<AddScatterChartOptions, "type">, range: AddChartRange): unknown;
+  addBubbleChart(options: Omit<AddChartOptions, "type">, range: AddChartRange): unknown;
+  addRadarChart(options: Omit<AddChartOptions, "type">, range: AddChartRange): unknown;
+  addStockChart(options: Omit<AddChartOptions, "type">, range: AddChartRange): unknown;
+  addSurfaceChart(options: Omit<AddSurfaceChartOptions, "type">, range: AddChartRange): unknown;
+  addHistogramChart(options: Omit<AddChartExOptions, "type">, range: AddChartRange): unknown;
+  addParetoChart(options: Omit<AddChartExOptions, "type">, range: AddChartRange): unknown;
+  addWaterfallChart(options: Omit<AddChartExOptions, "type">, range: AddChartRange): unknown;
+  addFunnelChart(options: Omit<AddChartExOptions, "type">, range: AddChartRange): unknown;
+  addTreemapChart(options: Omit<AddChartExOptions, "type">, range: AddChartRange): unknown;
+  addSunburstChart(options: Omit<AddChartExOptions, "type">, range: AddChartRange): unknown;
+  addBoxWhiskerChart(options: Omit<AddChartExOptions, "type">, range: AddChartRange): unknown;
+  addRegionMapChart(options: Omit<AddChartExOptions, "type">, range: AddChartRange): unknown;
+  addComboChart(options: AddComboChartOptions, range: AddChartRange): unknown;
+  addConditionalFormatting(cf: ConditionalFormattingOptions): unknown;
+  removeConditionalFormatting(
+    filter?:
+      | number
+      | ((
+          value: ConditionalFormattingOptions,
+          index: number,
+          array: ConditionalFormattingOptions[],
+        ) => boolean),
+  ): unknown;
+  addCellIsRule(
+    range: CellRange,
+    operator: CellIsOperators,
+    formulae: (string | number)[],
+    style?: Partial<ExcelStyle>,
+  ): unknown;
+  addExpressionRule(range: CellRange, formula: string, style?: Partial<ExcelStyle>): unknown;
+  addDataBar(range: CellRange, color?: { argb?: string; theme?: number }): unknown;
+  addColorScale(
+    range: CellRange,
+    cfvo: {
+      type: "min" | "max" | "num" | "percent" | "percentile" | "formula";
+      value?: number | string;
+    }[],
+    colors?: { argb?: string; theme?: number }[],
+  ): unknown;
+  addIconSet(
+    range: CellRange,
+    iconSet?: IconSetTypes,
+    cfvo?: { type: "percent" | "num" | "percentile" | "formula"; value?: number | string }[],
+    options?: { showValue?: boolean; reverse?: boolean },
+  ): unknown;
+  addTop10Rule(
+    range: CellRange,
+    rank: number,
+    options?: { percent?: boolean; bottom?: boolean; style?: Partial<ExcelStyle> },
+  ): unknown;
+  addAboveAverageRule(
+    range: CellRange,
+    options?: { aboveAverage?: boolean; style?: Partial<ExcelStyle> },
+  ): unknown;
+  addContainsTextRule(
+    range: CellRange,
+    text: string,
+    operator?: ContainsTextOperators,
+    style?: Partial<ExcelStyle>,
+  ): unknown;
+  addTimePeriodRule(
+    range: CellRange,
+    timePeriod: TimePeriodTypes,
+    style?: Partial<ExcelStyle>,
+  ): unknown;
+  addDataValidation(addr: Addr, validation: DataValidation): unknown;
+  removeDataValidation(address: string): unknown;
+  addListValidation(
+    range: CellRange,
+    list: (string | number | Date)[],
+    options?: Omit<DataValidationWithFormulae, "type" | "formulae" | "operator">,
+  ): unknown;
+  addRangeValidation(range: CellRange, validation: RangeValidationDef): unknown;
+  addNote(addr: Addr, text: string): unknown;
+  addNote(addr: Addr, config: NoteConfig): unknown;
+  addThreadedComment(ref: string, comment: ThreadedComment): unknown;
+  setCellHyperlink(addr: Addr, hyperlink: string, text?: string, tooltip?: string): unknown;
+  setCellRichText(addr: Addr, richText: RichTextRun[]): unknown;
+  addImage(imageId: string | number, range: AddImageRange): unknown;
+  addBackgroundImage(imageId: string | number): unknown;
+  addWatermark(options: WatermarkOptions): unknown;
+  removeWatermark(): unknown;
+  addSparklineGroup(options: AddSparklineGroupOptions): unknown;
+  addFormCheckbox(range: FormControlRange, options?: FormCheckboxOptions): unknown;
+  getFormCheckboxes(): ExcelFormCheckbox[];
+}
+
+// ─── External Workbook References ────────────────────────────────────────────
+
+export interface ExternalLinkInput {
+  /** Path or URL to external workbook */
+  target: string;
+  /** Exposed sheet names in the external workbook */
+  sheetNames?: string[];
+  /** Cached values for formula references */
+  cachedValues?: Record<string, Record<string, string | number | boolean | null>>;
+  /** Link mode (default: "External") */
+  targetMode?: "External" | "Internal";
+}

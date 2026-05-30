@@ -489,4 +489,152 @@ describe("WorkbookBuilder", () => {
       expect(names.find((n) => n.name === "ValueB")).toBeDefined();
     });
   });
+
+  // ── v0.5: Sheet State ────────────────────────────────────────────────────────
+
+  describe("sheet state", () => {
+    it("sets sheet state to hidden", async () => {
+      const result = await new WorkbookBuilder()
+        .addSheet({ name: "Visible" }, () => {})
+        .addSheet({ name: "Hidden", state: "hidden" }, () => {})
+        .write(outputPath("sheet-state.xlsx"));
+      expect(result.sizeBytes).toBeGreaterThan(0);
+    });
+
+    it("sets sheet state to veryHidden", async () => {
+      const result = await new WorkbookBuilder()
+        .addSheet({ name: "VeryHidden", state: "veryHidden" }, () => {})
+        .write(outputPath("sheet-veryhidden.xlsx"));
+      expect(result.sizeBytes).toBeGreaterThan(0);
+    });
+  });
+
+  // ── v0.5: Print Titles ───────────────────────────────────────────────────────
+
+  describe("print titles", () => {
+    it("applies print titles row", async () => {
+      const result = await new WorkbookBuilder()
+        .addSheet(
+          {
+            name: "Print",
+            pageSetup: { printTitlesRow: "1:3", printTitlesColumn: "A:B" },
+          },
+          () => {},
+        )
+        .write(outputPath("print-titles.xlsx"));
+      expect(result.sizeBytes).toBeGreaterThan(0);
+    });
+  });
+
+  // ── v0.5: Remove Sheet ───────────────────────────────────────────────────────
+
+  describe("removeSheet", () => {
+    it("removes a sheet by name", () => {
+      const wb = new WorkbookBuilder();
+      wb.addSheet({ name: "Keep" }, () => {});
+      wb.addSheet({ name: "Remove" }, () => {});
+      expect(wb.sheets).toHaveLength(2);
+      wb.removeSheet("Remove");
+      expect(wb.sheets).toHaveLength(1);
+      expect(wb.sheets[0].name).toBe("Keep");
+    });
+
+    it("throws for missing sheet", () => {
+      const wb = new WorkbookBuilder();
+      expect(() => wb.removeSheet("Missing")).toThrow("No sheet named");
+    });
+
+    it("returns this for chaining", () => {
+      const wb = new WorkbookBuilder();
+      wb.addSheet({ name: "S" }, () => {});
+      const result = wb.removeSheet("S");
+      expect(result).toBe(wb);
+    });
+  });
+
+  // ── v0.5: Duplicate Sheet ────────────────────────────────────────────────────
+
+  describe("duplicateSheet", () => {
+    it("duplicates an existing sheet", () => {
+      const wb = new WorkbookBuilder();
+      wb.addSheet({ name: "Original" }, (sheet) => {
+        sheet.setCell("A1", 42);
+      });
+      wb.duplicateSheet("Original", "Copy");
+      expect(wb.sheets).toHaveLength(2);
+      expect(wb.sheets[1].name).toBe("Copy");
+    });
+
+    it("auto-generates name when not provided", () => {
+      const wb = new WorkbookBuilder();
+      wb.addSheet({ name: "Data" }, () => {});
+      wb.duplicateSheet("Data");
+      expect(wb.sheets).toHaveLength(2);
+      expect(wb.sheets[1].name).toMatch(/^Data /);
+    });
+
+    it("throws for missing sheet", () => {
+      const wb = new WorkbookBuilder();
+      expect(() => wb.duplicateSheet("Missing")).toThrow("No sheet named");
+    });
+
+    it("returns this for chaining", () => {
+      const wb = new WorkbookBuilder();
+      wb.addSheet({ name: "S" }, () => {});
+      const result = wb.duplicateSheet("S");
+      expect(result).toBe(wb);
+    });
+  });
+
+  // ── v0.5: External Links ─────────────────────────────────────────────────────
+
+  describe("external links", () => {
+    it("addExternalLink registers a link", () => {
+      const wb = new WorkbookBuilder();
+      const link = wb.addExternalLink({
+        target: "external_data.xlsx",
+        sheetNames: ["Sheet1"],
+      });
+      expect(link.target).toBe("external_data.xlsx");
+    });
+
+    it("getExternalLinks returns registered links", () => {
+      const wb = new WorkbookBuilder();
+      wb.addExternalLink({ target: "data.xlsx", sheetNames: ["Data"] });
+      const links = wb.getExternalLinks();
+      expect(links).toHaveLength(1);
+      expect(links[0].target).toBe("data.xlsx");
+    });
+
+    it("adds link with cached values", () => {
+      const wb = new WorkbookBuilder();
+      const link = wb.addExternalLink({
+        target: "pricing.xlsx",
+        sheetNames: ["Sheet1"],
+        cachedValues: { Sheet1: { A1: 100, B1: "hello" } },
+      });
+      expect(link.cachedValues?.Sheet1?.A1).toBe(100);
+    });
+  });
+
+  // ── v0.5: Custom Workbook Properties ─────────────────────────────────────────
+
+  describe("custom workbook properties", () => {
+    it("sets title, subject, keywords, category, manager, description, language", async () => {
+      const result = await new WorkbookBuilder({
+        title: "Test Report",
+        subject: "Monthly Summary",
+        keywords: "report, monthly, summary",
+        category: "Finance",
+        manager: "Jane Doe",
+        description: "A test workbook",
+        language: "en-US",
+      })
+        .addSheet({ name: "Props" }, (sheet) => {
+          sheet.setCell("A1", "Metadata test");
+        })
+        .write(outputPath("custom-props.xlsx"));
+      expect(result.sizeBytes).toBeGreaterThan(0);
+    });
+  });
 });

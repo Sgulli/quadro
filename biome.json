@@ -28,7 +28,7 @@
       "style": {
         "useConst": "error",
         "noNonNullAssertion": "warn",
-        "useConsistentArrayType": { "level": "error", "options": { "syntax": "shorthand" } }
+        "useConsistentArrayType": "error"
       }
     }
   },

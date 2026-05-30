@@ -1,5 +1,6 @@
-import type { FormulaValue } from "./types.js";
-import { colLetter } from "./utils.js";
+import type { CellFormulaValue } from "@cj-tech-master/excelts";
+import { colLetter } from "./coords.js";
+import type { CellPrimitive, CellValue, FormulaValue } from "./types.js";
 
 type Ref = string | number;
 
@@ -73,6 +74,27 @@ export function ifExpr(
   const elseVal =
     typeof ifFalse === "object" && "formula" in ifFalse ? ifFalse.formula : esc(ifFalse);
   return { formula: `IF(${condition},${thenVal},${elseVal})` };
+}
+
+// ─── Cell value conversion helpers ─────────────────────────────────────────────
+
+export function isFormula(val: CellValue): val is FormulaValue {
+  return val !== null && typeof val === "object" && !(val instanceof Date);
+}
+
+function normalizeFormula(f: string): string {
+  return f.startsWith("=") ? f.slice(1) : f;
+}
+
+export function toFormulaValue(v: { formula: string; result?: CellPrimitive }): CellFormulaValue {
+  const fv: CellFormulaValue = { formula: normalizeFormula(v.formula) };
+  if (v.result) fv.result = v.result;
+  return fv;
+}
+
+export function toExcelValue(val: CellValue): CellPrimitive | CellFormulaValue {
+  if (isFormula(val)) return toFormulaValue(val);
+  return val;
 }
 
 export const F = {

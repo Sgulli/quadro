@@ -1,7 +1,7 @@
 import { Workbook } from "@cj-tech-master/excelts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SheetBuilder } from "../sheet-builder.js";
-import type { SheetOptions } from "../types.js";
+import type { NoteConfig, SheetOptions } from "../types.js";
 
 function makeSheet(opts: SheetOptions) {
   const wb = new Workbook();
@@ -851,6 +851,226 @@ describe("SheetBuilder", () => {
         .addChart({ type: "bar", series: [{ values: "Sheet1!$B$2:$B$5" }] }, "A1:D15")
         .addLineChart({ series: [{ values: "Sheet1!$B$2:$B$5" }] }, "A1:D15");
       expect(result).toBe(sheet);
+    });
+  });
+
+  // ── v0.5: Form Controls ──────────────────────────────────────────────────────
+
+  describe("form controls", () => {
+    it("addFormCheckbox delegates to ws.addFormCheckbox", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "addFormCheckbox");
+      sheet.addFormCheckbox("B2:C3", { text: "Approve", checked: true });
+      expect(ws.addFormCheckbox).toHaveBeenCalledWith("B2:C3", { text: "Approve", checked: true });
+    });
+
+    it("getFormCheckboxes delegates to ws.getFormCheckboxes", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "getFormCheckboxes");
+      sheet.addFormCheckbox("A1", { text: "Yes" });
+      sheet.getFormCheckboxes();
+      expect(ws.getFormCheckboxes).toHaveBeenCalled();
+    });
+
+    it("methods are chainable", () => {
+      const { sheet } = makeSheet({ name: "Test" });
+      const result = sheet
+        .addFormCheckbox("A1", { text: "X" })
+        .addFormCheckbox("B1", { text: "Y" });
+      expect(result).toBe(sheet);
+    });
+  });
+
+  // ── v0.5: Note Overloads ─────────────────────────────────────────────────────
+
+  describe("addNote (v0.5 richer)", () => {
+    it("accepts NoteConfig with texts", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      const config: NoteConfig = {
+        texts: [{ text: "Line 1" }, { text: "Line 2" }],
+      };
+      sheet.addNote("A1", config);
+      const cell = ws.getCell("A1");
+      expect(cell.note).toBeDefined();
+    });
+
+    it("accepts string directly (backward compat)", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.addNote("B2", "Simple note");
+      expect(ws.getCell("B2").note).toBe("Simple note");
+    });
+  });
+
+  // ── v0.5: Row Operations ─────────────────────────────────────────────────────
+
+  describe("insertRow", () => {
+    it("inserts a row at the given position", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "insertRow");
+      sheet.insertRow(1, ["a", "b"]);
+      expect(ws.insertRow).toHaveBeenCalledWith(1, ["a", "b"]);
+    });
+
+    it("inserts a row and updates rowCount", () => {
+      const { sheet } = makeSheet({ name: "Test" });
+      sheet.addRow([1]);
+      expect(sheet.rowCount).toBe(1);
+      sheet.insertRow(1, ["a"]);
+      expect(sheet.rowCount).toBe(2);
+    });
+
+    it("accepts row options", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      sheet.insertRow(1, ["data"], { height: 30 });
+      expect(ws.getRow(1).height).toBe(30);
+    });
+
+    it("methods are chainable", () => {
+      const { sheet } = makeSheet({ name: "Test" });
+      const result = sheet.insertRow(1, ["a"]).insertRow(2, ["b"]);
+      expect(result).toBe(sheet);
+    });
+  });
+
+  describe("duplicateRow", () => {
+    it("duplicates a row and updates rowCount", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "duplicateRow");
+      sheet.addRow([1]);
+      sheet.duplicateRow(1, 2, true);
+      expect(ws.duplicateRow).toHaveBeenCalledWith(1, 2, true);
+      expect(sheet.rowCount).toBe(3);
+    });
+
+    it("methods are chainable", () => {
+      const { sheet } = makeSheet({ name: "Test" });
+      sheet.addRow([1]);
+      const result = sheet.duplicateRow(1, 1);
+      expect(result).toBe(sheet);
+      expect(sheet.rowCount).toBe(2);
+    });
+  });
+
+  describe("removeRow", () => {
+    it("removes rows and updates rowCount", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "spliceRows");
+      sheet.addRows([[1], [2], [3]]);
+      expect(sheet.rowCount).toBe(3);
+      sheet.removeRow(2, 2);
+      expect(ws.spliceRows).toHaveBeenCalledWith(2, 2);
+      expect(sheet.rowCount).toBe(1);
+    });
+
+    it("methods are chainable", () => {
+      const { sheet } = makeSheet({ name: "Test" });
+      sheet.addRows([[1], [2]]);
+      const result = sheet.removeRow(1, 1);
+      expect(result).toBe(sheet);
+    });
+  });
+
+  // ── v0.5: Column Operations ──────────────────────────────────────────────────
+
+  describe("insertColumn / removeColumn", () => {
+    it("insertColumn delegates to ws.spliceColumns", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "spliceColumns");
+      sheet.insertColumn(2, 1);
+      expect(ws.spliceColumns).toHaveBeenCalledWith(2, 1);
+    });
+
+    it("insertColumn with data", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "spliceColumns");
+      sheet.insertColumn(2, 1, ["a"], ["b"]);
+      expect(ws.spliceColumns).toHaveBeenCalledWith(2, 1, ["a"], ["b"]);
+    });
+
+    it("removeColumn delegates to ws.spliceColumns", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws, "spliceColumns");
+      sheet.removeColumn(3, 2);
+      expect(ws.spliceColumns).toHaveBeenCalledWith(3, 2);
+    });
+
+    it("methods are chainable", () => {
+      const { sheet } = makeSheet({ name: "Test" });
+      const result = sheet.insertColumn(1, 1).removeColumn(2, 1);
+      expect(result).toBe(sheet);
+    });
+  });
+
+  // ── v0.5: Page Breaks ────────────────────────────────────────────────────────
+
+  describe("page breaks", () => {
+    it("addPageBreak adds a row page break", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      const row = ws.getRow(5);
+      vi.spyOn(row, "addPageBreak");
+      sheet.addPageBreak(5);
+      expect(row.addPageBreak).toHaveBeenCalled();
+    });
+
+    it("addColumnPageBreak adds a column page break", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      const col = ws.getColumn(3);
+      vi.spyOn(col, "addPageBreak");
+      sheet.addColumnPageBreak(3);
+      expect(col.addPageBreak).toHaveBeenCalled();
+    });
+
+    it("methods are chainable", () => {
+      const { sheet } = makeSheet({ name: "Test" });
+      const result = sheet.addPageBreak(10).addColumnPageBreak(5);
+      expect(result).toBe(sheet);
+    });
+  });
+
+  // ── v0.5: Ignored Errors ─────────────────────────────────────────────────────
+
+  describe("addIgnoredError", () => {
+    it("pushes to ws.ignoredErrors", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws.ignoredErrors, "push");
+      sheet.addIgnoredError("A1:A100", { numberStoredAsText: true });
+      expect(ws.ignoredErrors.push).toHaveBeenCalledWith({
+        ref: "A1:A100",
+        numberStoredAsText: true,
+      });
+    });
+
+    it("accepts multiple error types", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      vi.spyOn(ws.ignoredErrors, "push");
+      sheet.addIgnoredError("C1:C10", {
+        formula: true,
+        evalError: true,
+        emptyCellReference: true,
+      });
+      expect(ws.ignoredErrors.push).toHaveBeenCalledWith({
+        ref: "C1:C10",
+        formula: true,
+        evalError: true,
+        emptyCellReference: true,
+      });
+    });
+
+    it("methods are chainable", () => {
+      const { sheet } = makeSheet({ name: "Test" });
+      const result = sheet
+        .addIgnoredError("A1:A10", { numberStoredAsText: true })
+        .addIgnoredError("B1:B10", { formula: true });
+      expect(result).toBe(sheet);
+    });
+  });
+
+  // ── v0.5: worksheet getter ───────────────────────────────────────────────────
+
+  describe("worksheet getter", () => {
+    it("returns the underlying excelts worksheet", () => {
+      const { ws, sheet } = makeSheet({ name: "Test" });
+      expect(sheet.worksheet).toBe(ws);
     });
   });
 });
