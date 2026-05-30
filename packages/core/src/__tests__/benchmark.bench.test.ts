@@ -26,7 +26,7 @@ function fmt(ms: number): string {
   return `${ms.toFixed(0)}ms`;
 }
 
-const ROWS = 250_000;
+const ROWS = 500_000;
 const BATCH = 10_000;
 
 function generateChunk(start: number, end: number) {
@@ -42,7 +42,11 @@ describe("benchmark", { timeout: 300_000 }, () => {
     fs.mkdirSync(outputDir, { recursive: true });
     const outputFile = path.join(outputDir, "1m-rows-stream.xlsx");
 
-    const builder = new WorkbookBuilder({ author: "Benchmark", useStreaming: true });
+    const builder = new WorkbookBuilder({
+      author: "Benchmark",
+      useStreaming: true,
+      useSharedStrings: true,
+    });
     builder.addSheet({ name: "Data" }, (sheet) => {
       sheet.headers([
         { key: "item", header: "Item", width: 16 },
@@ -52,10 +56,10 @@ describe("benchmark", { timeout: 300_000 }, () => {
     });
 
     const t0 = performance.now();
-    const sheet = builder.getSheet("Data")!;
+    const sheet = builder.getSheet("Data");
     for (let i = 0; i < ROWS; i += BATCH) {
       const end = Math.min(i + BATCH, ROWS);
-      sheet.addRows(generateChunk(i, end));
+      sheet?.addRows(generateChunk(i, end));
     }
     await builder.write(outputFile);
     const elapsed = performance.now() - t0;
@@ -78,7 +82,10 @@ describe("benchmark", { timeout: 300_000 }, () => {
     fs.mkdirSync(outputDir, { recursive: true });
     const outputFile = path.join(outputDir, "1m-rows-standard.xlsx");
 
-    const builder = new WorkbookBuilder({ author: "Benchmark" });
+    const builder = new WorkbookBuilder({
+      author: "Benchmark",
+      useSharedStrings: true,
+    });
     builder.addSheet({ name: "Data" }, (sheet) => {
       sheet.headers([
         { key: "item", header: "Item", width: 16 },
@@ -119,7 +126,7 @@ describe("benchmark", { timeout: 300_000 }, () => {
 
     const sheet = loaded.getSheet("Data");
     const ws = sheet?.worksheet;
-    const rows = (ws as { rowCount?: number })?.rowCount ?? 0;
+    const rows = ws?.rowCount ?? 0;
 
     console.log(`\n${stamp()}`);
     console.log(`  File:      ${outputFile}`);
