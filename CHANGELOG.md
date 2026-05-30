@@ -45,45 +45,171 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **BREAKING**: Removed `utils.ts` barrel file (imports should use specific modules)
 
+## [1.0.0] - 2026-05-29
+
+### Added
+
+- Release checklist and roadmap finalization
+- `RELEASE.md` with release process documentation
+- Coverage verification thresholds (83% lines, 78% functions, 75% branches)
+
+### Changed
+
+- JSDoc added to all public exports (WorkbookBuilder, SheetBuilder, formulas)
+- Split sheet-builder.ts into sheet-builder + format helpers for better separation of concerns
+- Addressed code review issues: path traversal protection, ARGB validation, markdown escaping
+
+## [0.8.0] - 2026-05-28
+
+### Added
+
+- Sheet name validation (length, invalid characters, duplicates)
+- `WorkbookBuilder.getSheet()` to retrieve a sheet builder by name
+
+### Changed
+
+- Freeze pane preservation improved
+- DX and design improvements across the API
+
+## [0.7.0] - 2026-05-27
+
+### Added
+
+- `WorkbookBuilder.calculate()` — trigger full formula recalculation on next open
+- `WorkbookBuilder.registerFunction()` — register custom UDFs for formulas
+- `WorkbookBuilder.addSheetFromMarkdown()` — import markdown tables as sheets
+- `WorkbookBuilder.toMarkdown()` — export sheet data as markdown tables
+- `SheetBuilder.fillFormula()` — write formulas into cells by A1 reference
+- `SheetBuilder.fillFormulaRC()` — write formulas by column/row numbers
+
+## [0.6.0] - 2026-05-26
+
+### Added
+
+- 61 new formula builders (342 tests total):
+  - **Lookup**: `vlookup`, `hlookup`, `index`, `match`, `xlookup`, `offset`, `indirect`
+  - **Conditional**: `and`, `or`, `not`, `switch`, `ifs`, `iferror`, `ifna`
+  - **Math**: `round`, `roundup`, `rounddown`, `ceiling`, `floor`, `int`, `abs`, `mod`, `power`, `sqrt`, `log`, `log10`, `exp`, `pi`, `rand`, `randbetween`
+  - **Text**: `concat`, `left`, `right`, `mid`, `len`, `upper`, `lower`, `trim`, `substitute`, `text`, `value`, `exact`, `find`, `search`, `rept`
+  - **Date**: `date`, `today`, `now`, `year`, `month`, `day`, `hour`, `minute`, `second`, `eomonth`, `datedif`, `networkdays`, `workday`
+  - **Aggregate**: `sumif`, `sumifs`, `countif`, `countifs`, `averageif`, `averageifs`, `sumproduct`
+  - **Array**: `filter`, `unique`, `sort`, `sortby`, `sequence`, `cse`
+- `F` namespace expanded with all new formula helpers
+
+## [0.5.0] - 2026-05-25
+
+### Added
+
+- **Comments & Notes**: `sheet.addNote()` for cell comments, `sheet.addThreadedComment()` for threaded discussions
+- **Controls**: `sheet.addFormCheckbox()`, `sheet.getFormCheckboxes()`
+- **Sheet Management**: `sheet.insertRow()`, `sheet.duplicateRow()`, `sheet.removeRow()`, `sheet.insertColumn()`, `sheet.removeColumn()`, `sheet.addPageBreak()`, `sheet.addColumnPageBreak()`
+- **Data I/O**: `sheet.eachRow()`, `sheet.toJSON()`, `sheet.toAOA()`, `sheet.addJSON()`, `sheet.addAOA()`
+- **Ignored Errors**: `sheet.addIgnoredError()` for suppressing Excel warnings
+- `coords.ts` module with `cellRef()`, `colLetter()`, `colRange()`, `rangeRef()`, `resolveAddr()`, `resolveRange()`
+- `style-presets.ts` module with `Styles`, `applyStyle`, `toExcelFont`, `toExcelFill`, `toExcelBorder`, `toExcelAlignment`
+- Benchmark test suite
+- Integration test suite
+
+### Changed
+
+- Refactored SheetBuilder into mixin architecture:
+  - `mixins/charts.ts` — chart methods
+  - `mixins/conditional-formatting.ts` — conditional formatting rules
+  - `mixins/data-validation.ts` — data validation rules
+  - `mixins/media.ts` — notes, hyperlinks, images, watermarks, sparklines, form controls
+- Moved style utilities from `utils.ts` to `style-presets.ts`
+- Moved coordinate utilities from `utils.ts` to `coords.ts`
+
+## [0.4.1] - 2026-05-24
+
+### Added
+
+- Consolidated RC API with `Addr`/`CellRange` overloads
+- Object-form validation and conditional formatting options
+- CI release workflow with npm Trusted Publishing (OIDC)
+
+### Changed
+
+- Renamed package from `@quadro/core` to `@qquadro/core` (npm org registration)
+- Updated READMEs with v0.4.1 API changes
+
+### Fixed
+
+- Removed `NODE_AUTH_TOKEN` from CI (using Trusted Publishing)
+- Added `--no-git-checks` to publish command (detached HEAD on tag push)
+
+## [0.4.0] - 2026-05-23
+
+### Added
+
+- **Charts API**: 20 chart types
+  - Standard: bar, column, line, area, pie, doughnut, scatter, bubble, radar, stock, surface, combo
+  - Modern ChartEx: histogram, pareto, waterfall, funnel, treemap, sunburst, boxWhisker, regionMap
+- **Sparklines**: `sheet.addSparklineGroup()` — line/column/stacked in-cell mini charts with full styling
+- **Images**: `sheet.addImage()`, `sheet.addBackgroundImage()`, `sheet.addWatermark()`, `sheet.removeWatermark()`
+- **Hyperlinks**: `sheet.setCellHyperlink()` with text, tooltip, RC variants
+- **Rich Text**: `sheet.setCellRichText()` — mixed bold/italic/color within a single cell
+- **Named Ranges**: `workbook.addNamedRange()` for workbook-scoped named ranges
+- **Tables**: `sheet.addTable()` with structured references and styling
+- New types exported: `AddImageRange`, `CellHyperlinkValue`, `CellRichTextValue`, `RichTextRun`, `Sparkline`, `SparklineGroup`, `WatermarkOptions`, chart types
+- 19 new tests for all features
+
+### Changed
+
+- Chart support auto-installed from `@cj-tech-master/excelts/chart`
+
 ## [0.3.0] - 2026-05-20
+
+### Added
 
 - Data validation: `sheet.addDataValidation()`, `sheet.addListValidation()`, `sheet.addRangeValidation()`
 - Conditional formatting: `sheet.addConditionalFormatting()`, `sheet.addCellIsRule()`, `sheet.addExpressionRule()`
 - Conditional formatting: `sheet.addDataBar()`, `sheet.addColorScale()`, `sheet.addIconSet()`
 - Conditional formatting: `sheet.addTop10Rule()`, `sheet.addAboveAverageRule()`, `sheet.addContainsTextRule()`, `sheet.addTimePeriodRule()`
-- Exported `DataValidation`, `ConditionalFormattingOptions`, and related types from `@quadro/core`
+- Conditional formatting removal: `sheet.removeConditionalFormatting()`
+- Exported `DataValidation`, `ConditionalFormattingOptions`, and related types
+- Numeric coordinate API: `setCellRC()`, `mergeRC()`, `styleRangeRC()`, `colWidthRC()`
+- Numeric validation/formatting helpers: `cellRef()`, `colRange()`, `rangeRef()`
+- RC variants for all validation and formatting methods
+- Full zero-A1-string sheet building with `for` loops
+- `sheet.removeDataValidation()` to remove validation rules
+- `sheet.columnIndex()` resolves column key to 1-based index for RC API
+
+### Changed
+
 - Simplified API: `headers()` replaces `columns()` + `writeHeaders()` in one call
 - `merge()` accepts optional `height` property (no separate `rowHeight()` call needed)
 - `headers()` accepts optional `height` parameter
 - Columns auto-inferred from first object row when not explicitly defined
 - `columnRange()` auto-detects header offset (row 1 vs row 2)
-- CLI commands exposed via `pnpm cli` and `pnpm example`
-- Numeric coordinate API: `setCellRC()`, `mergeRC()`, `styleRangeRC()`, `colWidthRC()`
-- Numeric validation/formatting helpers: `cellRef()`, `colRange()`, `rangeRef()`
-- `addListValidationRC()`, `addRangeValidationRC()`, `addDataValidationRC()`
-- `addCellIsRuleRC()`, `addExpressionRuleRC()`, `addDataBarRC()`, `addColorScaleRC()`
-- `addIconSetRC()`, `addTop10RuleRC()`, `addAboveAverageRuleRC()`
-- `addContainsTextRuleRC()`, `addTimePeriodRuleRC()`
-- Full zero-A1-string sheet building with `for` loops
-- Conditional formatting removal: `sheet.removeConditionalFormatting()`
-- Rewrote assignments example using pure numeric coordinates (no A1 strings)
-- Fixed pre-existing merge crash in assignments (off-by-one `FIXED_COLS`)
-- Fixed pre-existing TypeScript errors in seat filter type guards
-- `sheet.columnIndex()` resolves column key to 1‑based index for RC API
-- `sheet.removeDataValidation()` to remove validation rules
-- Updated `@quadro/core` README with RC API docs, package managers, author attribution
+
+### Fixed
+
+- Pre-existing merge crash in assignments (off-by-one `FIXED_COLS`)
+- Pre-existing TypeScript errors in seat filter type guards
 
 ## [0.2.0] - unreleased
+
+### Added
 
 - Workbook reading: `WorkbookBuilder.load()`, `WorkbookBuilder.fromFile()`
 - Sheet-to-JSON: `sheet.toJSON()`, `sheet.toAOA()`, `sheet.addJSON()`, `sheet.addAOA()`
 - CSV import/export: `workbook.toCsv()`, `WorkbookBuilder.fromCsv()`, `fromCsvFile()`
 - Template workflow: load → modify → re-save
-- Command injection fix in debug CLI command (`execFileSync`)
+- CLI lint + test scripts and handler tests
+
+### Changed
+
+- Converted to turborepo monorepo with core package and citty CLI
+
+### Fixed
+
+- Command injection in debug CLI command (`execFileSync`)
 - Path containment via `allowedBase` option
-- CLI now has lint + test scripts and handler tests
 
 ## [0.1.0] - unreleased
+
+### Added
 
 - Initial release of `@quadro/core`
 - Workbook builder with fluent API
@@ -95,4 +221,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Page setup, headers/footers
 - Streaming mode for large datasets
 - Dual ESM/CJS builds
-- CLI app (`@quadro/cli`) with `example`, `assignments`, `debug` commands
+- CLI app with `example`, `assignments`, `debug` commands
