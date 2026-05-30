@@ -1,0 +1,380 @@
+import type { FormulaValue } from "../types.js";
+import { esc } from "./refs.js";
+
+export function sum(rangeStr: string, result?: number): FormulaValue {
+  return { formula: `SUM(${rangeStr})`, result };
+}
+
+export function average(rangeStr: string, result?: number): FormulaValue {
+  return { formula: `AVERAGE(${rangeStr})`, result };
+}
+
+export function count(rangeStr: string, result?: number): FormulaValue {
+  return { formula: `COUNT(${rangeStr})`, result };
+}
+
+export function max(rangeStr: string, result?: number): FormulaValue {
+  return { formula: `MAX(${rangeStr})`, result };
+}
+
+export function min(rangeStr: string, result?: number): FormulaValue {
+  return { formula: `MIN(${rangeStr})`, result };
+}
+
+export function add(...cells: (string | number)[]): FormulaValue {
+  return { formula: cells.join("+") };
+}
+
+export function sub(a: string | number, b: string | number): FormulaValue {
+  return { formula: `${a}-${b}` };
+}
+
+export function mul(a: string | number, b: string | number): FormulaValue {
+  return { formula: `${a}*${b}` };
+}
+
+export function div(a: string | number, b: string | number): FormulaValue {
+  return { formula: `${a}/${b}` };
+}
+
+export function pct(current: string | number, previous: string | number): FormulaValue {
+  return { formula: `(${current}-${previous})/${previous}` };
+}
+
+export function ifExpr(
+  condition: string,
+  ifTrue: string | number | FormulaValue,
+  ifFalse: string | number | FormulaValue,
+): FormulaValue {
+  const thenVal = typeof ifTrue === "object" && "formula" in ifTrue ? ifTrue.formula : esc(ifTrue);
+  const elseVal =
+    typeof ifFalse === "object" && "formula" in ifFalse ? ifFalse.formula : esc(ifFalse);
+  return { formula: `IF(${condition},${thenVal},${elseVal})` };
+}
+
+export function vlookup(
+  lookupValue: string | number,
+  tableArray: string,
+  colIndex: number,
+  rangeLookup = false,
+): FormulaValue {
+  return {
+    formula: `VLOOKUP(${esc(lookupValue)},${tableArray},${colIndex},${String(rangeLookup)})`,
+  };
+}
+
+export function hlookup(
+  lookupValue: string | number,
+  tableArray: string,
+  rowIndex: number,
+  rangeLookup = false,
+): FormulaValue {
+  return {
+    formula: `HLOOKUP(${esc(lookupValue)},${tableArray},${rowIndex},${String(rangeLookup)})`,
+  };
+}
+
+export function index(array: string, row: number, col?: number): FormulaValue {
+  return { formula: col ? `INDEX(${array},${row},${col})` : `INDEX(${array},${row})` };
+}
+
+export function match(
+  lookupValue: string | number,
+  lookupArray: string,
+  matchType = 0,
+): FormulaValue {
+  return { formula: `MATCH(${esc(lookupValue)},${lookupArray},${matchType})` };
+}
+
+export function xlookup(
+  lookupValue: string | number,
+  lookupArray: string,
+  returnArray: string,
+  ifNotFound?: string,
+  matchMode = 0,
+): FormulaValue {
+  const args = [esc(lookupValue), lookupArray, returnArray];
+  if (ifNotFound !== undefined) args.push(esc(ifNotFound));
+  if (matchMode !== 0) args.push(String(matchMode));
+  return { formula: `XLOOKUP(${args.join(",")})` };
+}
+
+export function offset(
+  reference: string,
+  rows: number,
+  cols: number,
+  height?: number,
+  width?: number,
+): FormulaValue {
+  const args = [reference, String(rows), String(cols)];
+  if (height !== undefined) args.push(String(height));
+  if (width !== undefined) args.push(String(width));
+  return { formula: `OFFSET(${args.join(",")})` };
+}
+
+export function indirect(refText: string): FormulaValue {
+  return { formula: `INDIRECT(${esc(refText)})` };
+}
+
+export function and(...conditions: string[]): FormulaValue {
+  return { formula: `AND(${conditions.join(",")})` };
+}
+
+export function or(...conditions: string[]): FormulaValue {
+  return { formula: `OR(${conditions.join(",")})` };
+}
+
+export function not(condition: string): FormulaValue {
+  return { formula: `NOT(${condition})` };
+}
+
+export function switchExpr(expression: string, ...cases: (string | number)[]): FormulaValue {
+  return { formula: `SWITCH(${[expression, ...cases.map(esc)].join(",")})` };
+}
+
+export function ifs(...conditions: string[]): FormulaValue {
+  return { formula: `IFS(${conditions.join(",")})` };
+}
+
+export function iferror(value: string | number, valueIfError: string | number): FormulaValue {
+  return { formula: `IFERROR(${value},${esc(valueIfError)})` };
+}
+
+export function ifna(value: string | number, valueIfNA: string | number): FormulaValue {
+  return { formula: `IFNA(${value},${esc(valueIfNA)})` };
+}
+
+export function round(number: string | number, digits = 0): FormulaValue {
+  return { formula: `ROUND(${number},${digits})` };
+}
+
+export function roundup(number: string | number, digits = 0): FormulaValue {
+  return { formula: `ROUNDUP(${number},${digits})` };
+}
+
+export function rounddown(number: string | number, digits = 0): FormulaValue {
+  return { formula: `ROUNDDOWN(${number},${digits})` };
+}
+
+export function abs(number: string | number): FormulaValue {
+  return { formula: `ABS(${number})` };
+}
+
+export function trunc(number: string | number, digits = 0): FormulaValue {
+  return { formula: `TRUNC(${number},${digits})` };
+}
+
+export function int(number: string | number): FormulaValue {
+  return { formula: `INT(${number})` };
+}
+
+export function mod(number: string | number, divisor: string | number): FormulaValue {
+  return { formula: `MOD(${number},${divisor})` };
+}
+
+export function ceiling(number: string | number, significance: string | number): FormulaValue {
+  return { formula: `CEILING(${number},${significance})` };
+}
+
+export function floor(number: string | number, significance: string | number): FormulaValue {
+  return { formula: `FLOOR(${number},${significance})` };
+}
+
+export function power(number: string | number, power: string | number): FormulaValue {
+  return { formula: `POWER(${number},${power})` };
+}
+
+export function sqrt(number: string | number): FormulaValue {
+  return { formula: `SQRT(${number})` };
+}
+
+export function concat(...texts: (string | number)[]): FormulaValue {
+  return { formula: `CONCAT(${texts.map(esc).join(",")})` };
+}
+
+export function text(value: string | number, format: string): FormulaValue {
+  return { formula: `TEXT(${esc(value)},${esc(format)})` };
+}
+
+export function left(text: string | number, chars = 1): FormulaValue {
+  return { formula: `LEFT(${esc(text)},${chars})` };
+}
+
+export function right(text: string | number, chars = 1): FormulaValue {
+  return { formula: `RIGHT(${esc(text)},${chars})` };
+}
+
+export function mid(text: string | number, start: number, chars: number): FormulaValue {
+  return { formula: `MID(${esc(text)},${start},${chars})` };
+}
+
+export function len(text: string | number): FormulaValue {
+  return { formula: `LEN(${esc(text)})` };
+}
+
+export function trim(text: string | number): FormulaValue {
+  return { formula: `TRIM(${esc(text)})` };
+}
+
+export function upper(text: string | number): FormulaValue {
+  return { formula: `UPPER(${esc(text)})` };
+}
+
+export function lower(text: string | number): FormulaValue {
+  return { formula: `LOWER(${esc(text)})` };
+}
+
+export function proper(text: string | number): FormulaValue {
+  return { formula: `PROPER(${esc(text)})` };
+}
+
+export function sumif(range: string, criteria: string | number, sumRange?: string): FormulaValue {
+  return {
+    formula: sumRange
+      ? `SUMIF(${range},${esc(criteria)},${sumRange})`
+      : `SUMIF(${range},${esc(criteria)})`,
+  };
+}
+
+export function sumifs(
+  sumRange: string,
+  criteriaRange1: string,
+  criteria1: string | number,
+  ...more: (string | number)[]
+): FormulaValue {
+  const args = [sumRange, criteriaRange1, esc(criteria1)];
+  for (let i = 0; i < more.length; i++) args.push(i % 2 === 0 ? String(more[i]) : esc(more[i]));
+  return { formula: `SUMIFS(${args.join(",")})` };
+}
+
+export function countif(range: string, criteria: string | number): FormulaValue {
+  return { formula: `COUNTIF(${range},${esc(criteria)})` };
+}
+
+export function countifs(
+  criteriaRange1: string,
+  criteria1: string | number,
+  ...more: (string | number)[]
+): FormulaValue {
+  const args = [criteriaRange1, esc(criteria1)];
+  for (let i = 0; i < more.length; i++) args.push(i % 2 === 0 ? String(more[i]) : esc(more[i]));
+  return { formula: `COUNTIFS(${args.join(",")})` };
+}
+
+export function averageif(
+  range: string,
+  criteria: string | number,
+  averageRange?: string,
+): FormulaValue {
+  return {
+    formula: averageRange
+      ? `AVERAGEIF(${range},${esc(criteria)},${averageRange})`
+      : `AVERAGEIF(${range},${esc(criteria)})`,
+  };
+}
+
+export function averageifs(
+  averageRange: string,
+  criteriaRange1: string,
+  criteria1: string | number,
+  ...more: (string | number)[]
+): FormulaValue {
+  const args = [averageRange, criteriaRange1, esc(criteria1)];
+  for (let i = 0; i < more.length; i++) args.push(i % 2 === 0 ? String(more[i]) : esc(more[i]));
+  return { formula: `AVERAGEIFS(${args.join(",")})` };
+}
+
+export function subtotal(functionNum: number, ref1: string, ...refs: string[]): FormulaValue {
+  return { formula: `SUBTOTAL(${functionNum},${[ref1, ...refs].join(",")})` };
+}
+
+export function now(): FormulaValue {
+  return { formula: "NOW()" };
+}
+
+export function today(): FormulaValue {
+  return { formula: "TODAY()" };
+}
+
+export function date(year: number, month: number, day: number): FormulaValue {
+  return { formula: `DATE(${year},${month},${day})` };
+}
+
+export function year(date: string | number): FormulaValue {
+  return { formula: `YEAR(${date})` };
+}
+
+export function month(date: string | number): FormulaValue {
+  return { formula: `MONTH(${date})` };
+}
+
+export function day(date: string | number): FormulaValue {
+  return { formula: `DAY(${date})` };
+}
+
+export function eomonth(startDate: string | number, months: number): FormulaValue {
+  return { formula: `EOMONTH(${startDate},${months})` };
+}
+
+export function networkdays(
+  startDate: string | number,
+  endDate: string | number,
+  holidays?: string,
+): FormulaValue {
+  return {
+    formula: holidays
+      ? `NETWORKDAYS(${startDate},${endDate},${holidays})`
+      : `NETWORKDAYS(${startDate},${endDate})`,
+  };
+}
+
+export function isnumber(value: string | number): FormulaValue {
+  return { formula: `ISNUMBER(${value})` };
+}
+
+export function istext(value: string | number): FormulaValue {
+  return { formula: `ISTEXT(${value})` };
+}
+
+export function isblank(value: string | number): FormulaValue {
+  return { formula: `ISBLANK(${value})` };
+}
+
+export function iserror(value: string | number): FormulaValue {
+  return { formula: `ISERROR(${value})` };
+}
+
+export function rank(number: string | number, ref: string, order = 0): FormulaValue {
+  return { formula: `RANK(${number},${ref},${order})` };
+}
+
+export function large(array: string, k: number): FormulaValue {
+  return { formula: `LARGE(${array},${k})` };
+}
+
+export function small(array: string, k: number): FormulaValue {
+  return { formula: `SMALL(${array},${k})` };
+}
+
+export function filter(array: string, include: string, ifEmpty?: string): FormulaValue {
+  return {
+    formula: ifEmpty
+      ? `FILTER(${array},${include},${esc(ifEmpty)})`
+      : `FILTER(${array},${include})`,
+  };
+}
+
+export function sort(array: string, sortBy?: number, sortOrder = 1): FormulaValue {
+  const args = [array];
+  if (sortBy !== undefined) args.push(String(sortBy));
+  if (sortOrder !== 1) args.push(String(sortOrder));
+  return { formula: `SORT(${args.join(",")})` };
+}
+
+export function unique(array: string, byCol = false): FormulaValue {
+  return byCol ? { formula: `UNIQUE(${array},TRUE)` } : { formula: `UNIQUE(${array})` };
+}
+
+export function cse(formulaStr: string): FormulaValue {
+  return { formula: `{${formulaStr}}` };
+}

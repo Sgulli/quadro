@@ -117,8 +117,26 @@ describe("benchmark", { timeout: 300_000 }, () => {
     console.log("───────────────────────────────────────────\n");
   });
 
-  it(`read: loads back the ${ROWS.toLocaleString()}-row workbook`, async () => {
+  it(`read: loads back the ${ROWS.toLocaleString()}-row streaming workbook`, async () => {
     const outputFile = path.join(outputDir, "1m-rows-stream.xlsx");
+
+    const t0 = performance.now();
+    const loaded = await WorkbookBuilder.load(outputFile);
+    const elapsed = performance.now() - t0;
+
+    const sheet = loaded.getSheet("Data");
+    const ws = sheet?.worksheet;
+    const rows = ws?.rowCount ?? 0;
+
+    console.log(`\n${stamp()}`);
+    console.log(`  File:      ${outputFile}`);
+    console.log(`  Rows read: ${rows.toLocaleString()}`);
+    console.log(`  Time:      ${fmt(elapsed)}`);
+    console.log("───────────────────────────────────────────\n");
+  });
+
+  it(`read: loads back the ${ROWS.toLocaleString()}-row standard workbook`, async () => {
+    const outputFile = path.join(outputDir, "1m-rows-standard.xlsx");
 
     const t0 = performance.now();
     const loaded = await WorkbookBuilder.load(outputFile);

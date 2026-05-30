@@ -58,11 +58,11 @@
     "provenance": true
   },
   "dependencies": {
-    "@cj-tech-master/excelts": "9.5.7"
+    "@cj-tech-master/excelts": "9.5.9"
   },
   "devDependencies": {
     "@quadro/tsconfig": "workspace:*",
-    "rolldown": "^1.0.2",
+    "rolldown": "^1.0.3",
     "typescript": "^5.8.3",
     "@vitest/coverage-v8": "^4.1.7",
     "vitest": "^4.1.7"
