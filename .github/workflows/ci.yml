@@ -21,3 +21,25 @@ jobs:
       - run: pnpm turbo run typecheck
       - run: pnpm turbo run test
       - run: pnpm turbo run build
+
+  auto-tag:
+    needs: quality
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Create version tag if missing
+        run: |
+          LATEST_TAG=$(git tag --sort=-v:refname | grep -E '^v[0-9]' | head -1 || true)
+          VERSION="v$(jq -r .version packages/core/package.json)"
+          if [ "$LATEST_TAG" != "$VERSION" ]; then
+            echo "Creating tag $VERSION (latest tag was $LATEST_TAG)"
+            git tag "$VERSION"
+            git push origin "$VERSION"
+          else
+            echo "Tag $VERSION already exists, skipping"
+          fi
