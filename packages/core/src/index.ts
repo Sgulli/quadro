@@ -57,9 +57,10 @@ export {
   sum,
 } from "./formulas.js";
 
-// ── Style utilities ──────────────────────────────────────────────────────────
+// ── Range & Coordinate utilities ──────────────────────────────────────────────
 
 export { cellRef, colLetter, colRange, rangeRef } from "./coords.js";
+export { col, Range, row } from "./range.js";
 export {
   accounting,
   align,
