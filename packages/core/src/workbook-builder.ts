@@ -130,8 +130,11 @@ export class WorkbookBuilder {
     return this._wb.writeCsv();
   }
 
-  async writeCsv(outputPath: string): Promise<void> {
-    await this._wb.writeCsvFile(path.resolve(outputPath));
+  async writeCsv(outputPath: string): Promise<WriteResult> {
+    const resolved = this._safeResolve(outputPath);
+    await this._wb.writeCsvFile(resolved);
+    const { size } = await fs.promises.stat(resolved);
+    return { filePath: resolved, sizeBytes: size };
   }
 
   private _safeResolve(filePath: string): string {

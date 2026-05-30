@@ -351,6 +351,30 @@ describe("integration tests (write + read-back verification)", () => {
     expect((ws.getCell("C2") as { value: { formula?: string } }).value?.formula ?? "").toBeTruthy();
   });
 
+  it("fillFormulaRC writes formula using numeric coordinates", async () => {
+    const outputFile = outputPath("fill-formula-rc.xlsx");
+    await new WorkbookBuilder({ author: "v0.8 Test" })
+      .addSheet({ name: "Data" }, (sheet) => {
+        sheet.headers([
+          { key: "x", header: "X", width: 10 },
+          { key: "y", header: "Y", width: 10 },
+          { key: "sum", header: "Sum", width: 10 },
+        ]);
+        sheet.addRows([
+          { x: 5, y: 10 },
+          { x: 15, y: 20 },
+        ]);
+        sheet.fillFormulaRC(3, 2, "A2+B2");
+        sheet.fillFormulaRC(3, 3, "A3+B3");
+      })
+      .write(outputFile);
+
+    const loaded = await WorkbookBuilder.load(outputFile);
+    const ws = loaded.getSheet("Data")!.worksheet;
+    expect((ws.getCell("C2") as { value: { formula?: string } }).value?.formula ?? "").toBeTruthy();
+    expect((ws.getCell("C3") as { value: { formula?: string } }).value?.formula ?? "").toBeTruthy();
+  });
+
   it("markdown import/export round-trips", async () => {
     const md = "| Name  | Age |\n|-------|-----|\n| Alice | 30  |\n| Bob   | 25  |";
     const outputFile = outputPath("markdown.xlsx");
