@@ -43,18 +43,18 @@
 - [x] Hyperlinks
 - [x] Rich Text (mixed bold/italic/color within a single cell)
 
-## v0.5 — Comments, Controls & Sheet Management
+## v0.5 — Comments, Controls & Sheet Management ✅ (2026-05-30)
 
-- [ ] Comments / Notes (classic VML + threaded)
-- [ ] Form Controls (checkboxes)
-- [ ] Sheet state (hidden / veryHidden)
-- [ ] Sheet operations: insert/remove/duplicate rows, columns, sheets
-- [ ] Print titles (repeat rows/columns on every printed page)
-- [ ] Page breaks (manual row/column breaks)
-- [ ] Sheet zoom
-- [ ] Custom workbook properties (title, subject, keywords, category, manager)
-- [ ] Ignored errors (suppress green triangles)
-- [ ] External workbook references
+- [x] Comments / Notes (classic VML + threaded)
+- [x] Form Controls (checkboxes)
+- [x] Sheet state (hidden / veryHidden)
+- [x] Sheet operations: insert/remove/duplicate rows, columns, sheets
+- [x] Print titles (repeat rows/columns on every printed page)
+- [x] Page breaks (manual row/column breaks)
+- [x] Sheet zoom
+- [x] Custom workbook properties (title, subject, keywords, category, manager)
+- [x] Ignored errors (suppress green triangles)
+- [x] External workbook references
 
 ## v0.6 — Formula Expansion
 

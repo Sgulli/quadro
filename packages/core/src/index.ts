@@ -59,6 +59,7 @@ export {
 
 // ── Style utilities ──────────────────────────────────────────────────────────
 
+export { cellRef, colLetter, colRange, rangeRef } from "./coords.js";
 export {
   accounting,
   align,
@@ -70,16 +71,86 @@ export {
   numFmt,
   Styles,
   style,
-} from "./utils.js";
-
-// ── Internal helpers (used by @quadro/cli; may change without notice) ────────
-
-export { cellRef, colLetter, colRange, rangeRef } from "./utils.js";
+} from "./style-presets.js";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export type {
-  // Chart types
+  Addr,
+  AddSparklineGroupOptions,
+  Alignment,
+  Border,
+  BorderSide,
+  BorderStyle,
+  BuiltinFormat,
+  CellPrimitive,
+  CellRange,
+  CellStyle,
+  CellValue,
+  ColumnDef,
+  ExternalLinkInput,
+  Fill,
+  Font,
+  FormulaValue,
+  GradientFill,
+  HeaderFooterSection,
+  HorizontalAlignment,
+  IgnoredErrorDef,
+  MergeRange,
+  NoteConfig,
+  NoteText,
+  NumberFormat,
+  RangeValidationDef,
+  RowData,
+  RowOptions,
+  SheetHeaderFooter,
+  SheetOptions,
+  SolidFill,
+  Sparkline,
+  SparklineAxisType,
+  SparklineColor,
+  SparklineGroup,
+  SparklineType,
+  VerticalAlignment,
+  WorkbookOptions,
+  WriteResult,
+} from "./types.js";
+
+// ── Constants ────────────────────────────────────────────────────────────────
+
+export { BUILTIN_FORMATS } from "./types.js";
+
+// ── Re-exports from excelts ──────────────────────────────────────────────────
+
+export type {
+  AddImageRange,
+  CellHyperlinkValue,
+  CellHyperlinkValueInput,
+  CellIsOperators,
+  CellRichTextValue,
+  ConditionalFormattingOptions,
+  ConditionalFormattingRule,
+  ContainsTextOperators,
+  DataValidation,
+  DataValidationOperator,
+  DefinedNameModel,
+  ExternalLinkModel,
+  FormCheckboxOptions,
+  FormControlRange,
+  IconSetTypes,
+  ImageData,
+  RichText as RichTextRun,
+  TableColumnProperties,
+  TableStyleProperties,
+  ThreadedComment,
+  ThreadedCommentMention,
+  ThreadedCommentPerson,
+  TimePeriodTypes,
+  WatermarkMode,
+  WatermarkOptions,
+} from "@cj-tech-master/excelts";
+
+export type {
   AddAxisOptions,
   AddBarChartOptions,
   AddChartExOptions,
@@ -91,92 +162,15 @@ export type {
   AddDataLabelsOptions,
   AddDataPointOptions,
   AddErrorBarsOptions,
-  // Image types
-  AddImageRange,
   AddLegendOptions,
   AddPieChartOptions,
   AddPlotAreaOptions,
-  // Overload helper types
-  Addr,
   AddScatterChartOptions,
-  // Sparkline types
-  AddSparklineGroupOptions,
   AddSurfaceChartOptions,
   AddTitleOptions,
   AddTrendlineOptions,
-  Alignment,
-  Border,
-  BorderSide,
-  BorderStyle,
-  BuiltinFormat,
-  // Cell value types
-  CellHyperlinkValue,
-  CellHyperlinkValueInput,
-  // Cell value types
-  CellPrimitive,
-  // Column / row / sheet
-  CellRange,
-  CellRichTextValue,
-  // Style types
-  CellStyle,
-  CellValue,
   ChartType,
-  ColumnDef,
   ExcelChartExPreset,
   ExcelChartPreset,
-  Fill,
-  Font,
-  FormulaValue,
-  GradientFill,
-  HeaderFooterSection,
-  HorizontalAlignment,
-  ImageData,
-  MergeRange,
-  // Comment / Note types
-  NoteConfig,
-  NoteText,
-  NumberFormat,
-  // Data validation
-  RangeValidationDef,
-  RichTextRun,
-  RowData,
-  RowOptions,
   SeriesFromColumnsOptions,
-  SheetHeaderFooter,
-  SheetOptions,
-  SolidFill,
-  Sparkline,
-  SparklineAxisType,
-  SparklineColor,
-  SparklineGroup,
-  SparklineType,
-  ThreadedComment,
-  ThreadedCommentMention,
-  ThreadedCommentPerson,
-  VerticalAlignment,
-  WatermarkMode,
-  WatermarkOptions,
-  // Workbook
-  WorkbookOptions,
-  WriteResult,
-} from "./types.js";
-
-// ── Constants ────────────────────────────────────────────────────────────────
-
-export { BUILTIN_FORMATS } from "./types.js";
-
-// ── Data Validation & Conditional Formatting (re-exported from excelts) ──────
-
-export type {
-  CellIsOperators,
-  ConditionalFormattingOptions,
-  ConditionalFormattingRule,
-  ContainsTextOperators,
-  DataValidation,
-  DataValidationOperator,
-  DefinedNameModel,
-  IconSetTypes,
-  TableColumnProperties,
-  TableStyleProperties,
-  TimePeriodTypes,
-} from "@cj-tech-master/excelts";
+} from "@cj-tech-master/excelts/chart";

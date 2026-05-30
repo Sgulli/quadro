@@ -3,11 +3,12 @@ import path from "node:path";
 import {
   type DefinedNameModel,
   Workbook as ExcelWorkbook,
+  type ExternalLinkModel,
   type ImageData,
 } from "@cj-tech-master/excelts";
+import { colLetter } from "./coords.js";
 import { _sheetFinalizers, SheetBuilder } from "./sheet-builder.js";
-import type { SheetOptions, WorkbookOptions, WriteResult } from "./types.js";
-import { colLetter } from "./utils.js";
+import type { ExternalLinkInput, SheetOptions, WorkbookOptions, WriteResult } from "./types.js";
 
 export class WorkbookBuilder {
   private _wb: ExcelWorkbook;
@@ -197,14 +198,72 @@ export class WorkbookBuilder {
     return this._wb.registerPerson(displayName, userId, providerId);
   }
 
+  /** Remove a sheet by name. */
+  removeSheet(name: string): this {
+    const sheet = this.getSheet(name);
+    if (!sheet) throw new Error(`[WorkbookBuilder] No sheet named "${name}".`);
+    this._wb.removeWorksheetEx(sheet.worksheet);
+    this._sheets = this._sheets.filter((s) => s.name !== name);
+    return this;
+  }
+
+  /** Duplicate an existing sheet with an optional new name. */
+  duplicateSheet(name: string, newName?: string): this {
+    const source = this.getSheet(name);
+    if (!source) throw new Error(`[WorkbookBuilder] No sheet named "${name}".`);
+    const targetName =
+      newName ?? `${name} (${this._sheets.filter((s) => s.name.startsWith(name)).length})`;
+    const newWs = this._wb.importSheet(source.worksheet, targetName);
+    const builder = new SheetBuilder(newWs, { name: targetName });
+    this._sheets.push(builder);
+    return this;
+  }
+
+  /** Register an external workbook reference for cross-workbook formulas. */
+  addExternalLink(input: ExternalLinkInput): ExternalLinkModel {
+    return this._wb.addExternalLink(input);
+  }
+
+  /** Get all registered external links. */
+  getExternalLinks(): ExternalLinkModel[] {
+    return this._wb.externalLinks;
+  }
+
   private async _finalizeAll(): Promise<void> {
-    await Promise.all(this._sheets.map((s) => _sheetFinalizers.get(s)?.()));
+    const results = await Promise.allSettled(this._sheets.map((s) => _sheetFinalizers.get(s)?.()));
+    const errors = results
+      .filter((r): r is PromiseRejectedResult => r.status === "rejected")
+      .map((r) => r.reason);
+    if (errors.length > 0) {
+      throw new AggregateError(
+        errors,
+        `[WorkbookBuilder] ${errors.length} sheet(s) failed to finalize.`,
+      );
+    }
   }
 
   private _applyWorkbookMeta(): void {
-    const { author, company, created } = this._opts;
+    const {
+      author,
+      company,
+      created,
+      title,
+      subject,
+      keywords,
+      category,
+      manager,
+      description,
+      language,
+    } = this._opts;
     if (author) this._wb.creator = author;
     if (company) this._wb.company = company;
+    if (title) this._wb.title = title;
+    if (subject) this._wb.subject = subject;
+    if (keywords) this._wb.keywords = keywords;
+    if (category) this._wb.category = category;
+    if (manager) this._wb.manager = manager;
+    if (description) this._wb.description = description;
+    if (language) this._wb.language = language;
     this._wb.created = created ?? new Date();
     this._wb.calcProperties.fullCalcOnLoad = true;
   }

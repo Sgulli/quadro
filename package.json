@@ -1,7 +1,7 @@
 {
   "name": "quadro-monorepo",
   "private": true,
-  "packageManager": "pnpm@11.1.2",
+  "packageManager": "pnpm@11.5.0+sha512.dbfcc4f81cf48597afd4bc391ffdf12c11f1a9fb83a395bfa6b0a2d9cc2fd8ffebafdb1ccbd529632153f793904c2615b7f09fe1a345473fd1c35845172a8eb1",
   "author": {
     "name": "sgulli"
   },
@@ -17,6 +17,7 @@
     "format:fix": "biome format --write .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "bench": "vitest run packages/core/src/__tests__/benchmark.bench.test.ts --reporter=verbose --test-timeout=300000",
     "cli": "node apps/cli/dist/index.js",
     "example": "node apps/cli/dist/index.js example"
   },
