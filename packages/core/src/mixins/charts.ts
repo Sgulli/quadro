@@ -11,7 +11,7 @@ import type {
 
 import type { SheetBuilderExtension } from "../types.js";
 
-declare module "../sheet-builder.js" {
+declare module "../builders/sheet-builder.js" {
   interface SheetBuilder {
     addChart(options: AddChartOptions, range: AddChartRange): this;
     addColumnChart(

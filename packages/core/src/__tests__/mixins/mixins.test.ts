@@ -1,11 +1,11 @@
 import { Workbook } from "@cj-tech-master/excelts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { SheetBuilder } from "../../sheet-builder.js";
+import { SheetBuilder } from "../../builders/sheet-builder.js";
 import type { SheetOptions } from "../../types.js";
-import "../charts.js";
-import "../conditional-formatting.js";
-import "../data-validation.js";
-import "../media.js";
+import "../../mixins/charts.js";
+import "../../mixins/conditional-formatting.js";
+import "../../mixins/data-validation.js";
+import "../../mixins/media.js";
 
 function makeSheet(opts: SheetOptions) {
   const wb = new Workbook();

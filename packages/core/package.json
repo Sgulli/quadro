@@ -1,6 +1,6 @@
 {
   "name": "@qquadro/core",
-  "version": "0.4.1",
+  "version": "2.0.0",
   "description": "Fluent, fully-typed Excel builder for Node.js — styles, formulas, merged cells, headers, streaming",
   "type": "module",
   "main": "dist/cjs/index.js",
@@ -58,11 +58,11 @@
     "provenance": true
   },
   "dependencies": {
-    "@cj-tech-master/excelts": "9.5.7"
+    "@cj-tech-master/excelts": "9.5.9"
   },
   "devDependencies": {
     "@quadro/tsconfig": "workspace:*",
-    "rolldown": "^1.0.2",
+    "rolldown": "^1.0.3",
     "typescript": "^5.8.3",
     "@vitest/coverage-v8": "^4.1.7",
     "vitest": "^4.1.7"

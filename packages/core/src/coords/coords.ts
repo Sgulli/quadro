@@ -1,4 +1,4 @@
-import type { Addr, CellRange } from "./types.js";
+import type { Addr, CellRange } from "../types.js";
 
 export function colLetter(n: number): string {
   let r = "";

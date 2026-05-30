@@ -6,9 +6,9 @@ import {
   type ExternalLinkModel,
   type ImageData,
 } from "@cj-tech-master/excelts";
-import { colLetter } from "./coords.js";
+import { colLetter } from "../coords/coords.js";
+import type { ExternalLinkInput, SheetOptions, WorkbookOptions, WriteResult } from "../types.js";
 import { _sheetFinalizers, SheetBuilder } from "./sheet-builder.js";
-import type { ExternalLinkInput, SheetOptions, WorkbookOptions, WriteResult } from "./types.js";
 
 /** Fluent Excel workbook builder. Entry point for creating, reading, and modifying XLSX files. */
 export class WorkbookBuilder {

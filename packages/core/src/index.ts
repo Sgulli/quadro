@@ -34,11 +34,45 @@
 
 // ── Builders ────────────────────────────────────────────────────────────────
 
-export { SheetBuilder } from "./sheet-builder.js";
-export { WorkbookBuilder } from "./workbook-builder.js";
+export type { ColumnMap, ColumnSchema, ColumnSchemaMap } from "./builders/column-map.js";
+export { ColumnRef, createColumnMap } from "./builders/column-map.js";
+export { RangeBuilder } from "./builders/range-builder.js";
+export { SheetBuilder } from "./builders/sheet-builder.js";
+export { WorkbookBuilder } from "./builders/workbook-builder.js";
 
-// ── Formula helpers ───────────────────────────────────────────────────────────
+// ── Schema ──────────────────────────────────────────────────────────────────
 
+export type { DefinedSheet } from "./schema/define-sheet.js";
+export { defineSheet } from "./schema/define-sheet.js";
+export type {
+  BooleanField,
+  CurrencyField,
+  DateField,
+  EnumField,
+  InferRowType,
+  NumberField,
+  PercentField,
+  SchemaDefinition,
+  SchemaField,
+  TextField,
+} from "./schema/fields.js";
+export {
+  booleanField,
+  currencyField,
+  dateField,
+  enumType,
+  numberField,
+  percentField,
+  Schema,
+  schemaToColumnDefs,
+  text,
+  validateRow,
+} from "./schema/fields.js";
+
+// ── Formula helpers ─────────────────────────────────────────────────────────
+
+export type { FormulaNode } from "./formulas/ast.js";
+export { Expr, Formula } from "./formulas/ast.js";
 export {
   add,
   average,
@@ -55,11 +89,15 @@ export {
   ref,
   sub,
   sum,
-} from "./formulas.js";
+} from "./formulas/helpers.js";
 
-// ── Style utilities ──────────────────────────────────────────────────────────
+// ── Coordinate & Range utilities ────────────────────────────────────────────
 
-export { cellRef, colLetter, colRange, rangeRef } from "./coords.js";
+export { cellRef, colLetter, colRange, rangeRef } from "./coords/coords.js";
+export { col, Range, row } from "./coords/range.js";
+
+// ── Style utilities ─────────────────────────────────────────────────────────
+
 export {
   accounting,
   align,
@@ -71,7 +109,7 @@ export {
   numFmt,
   Styles,
   style,
-} from "./style-presets.js";
+} from "./styles/presets.js";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

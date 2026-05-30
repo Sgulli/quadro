@@ -70,7 +70,7 @@ import {
   vlookup,
   xlookup,
   year,
-} from "../formulas.js";
+} from "../../formulas/helpers.js";
 
 const f = (s: string) => ({ formula: s });
 

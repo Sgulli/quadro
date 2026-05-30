@@ -1,7 +1,7 @@
 import type { Worksheet as ExcelWorksheet } from "@cj-tech-master/excelts";
-import { colLetter, resolveRange } from "../coords.js";
-import { isFormula, toFormulaValue } from "../formulas.js";
-import { applyStyle } from "../style-presets.js";
+import { colLetter, resolveRange } from "../coords/coords.js";
+import { isFormula, toFormulaValue } from "../formulas/helpers.js";
+import { applyStyle } from "../styles/presets.js";
 import type { CellRange, CellStyle, CellValue } from "../types.js";
 
 export function applyFreeze(ws: ExcelWorksheet, row: number, col: number): void {
@@ -48,7 +48,7 @@ export function applyMerge(
   const cell = ws.getCell(tl);
   if (value) {
     if (isFormula(value)) {
-      (cell as unknown as { value: object }).value = toFormulaValue(value);
+      cell.value = toFormulaValue(value);
     } else {
       cell.value = value;
     }

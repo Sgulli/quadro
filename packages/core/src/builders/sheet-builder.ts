@@ -14,14 +14,14 @@ import { installChartSupport } from "@cj-tech-master/excelts/chart";
 
 installChartSupport();
 
-import { colLetter, resolveAddr, resolveRange } from "./coords.js";
-import { isFormula, toExcelValue, toFormulaValue } from "./formulas.js";
-import { applyChartMixin } from "./mixins/charts.js";
-import { applyConditionalFormattingMixin } from "./mixins/conditional-formatting.js";
-import { applyDataValidationMixin } from "./mixins/data-validation.js";
-import { applyAutoFilter, applyFreeze, applyMerge, applyStyleRange } from "./mixins/format.js";
-import { applyMediaMixin } from "./mixins/media.js";
-import { applyStyle, formatHeaderFooterSection } from "./style-presets.js";
+import { colLetter, resolveAddr, resolveRange } from "../coords/coords.js";
+import { isFormula, toExcelValue, toFormulaValue } from "../formulas/helpers.js";
+import { applyChartMixin } from "../mixins/charts.js";
+import { applyConditionalFormattingMixin } from "../mixins/conditional-formatting.js";
+import { applyDataValidationMixin } from "../mixins/data-validation.js";
+import { applyAutoFilter, applyFreeze, applyMerge, applyStyleRange } from "../mixins/format.js";
+import { applyMediaMixin } from "../mixins/media.js";
+import { applyStyle, formatHeaderFooterSection } from "../styles/presets.js";
 import type {
   Addr,
   CellRange,
@@ -34,7 +34,9 @@ import type {
   RowOptions,
   SheetBuilderExtension,
   SheetOptions,
-} from "./types.js";
+} from "../types.js";
+import { type ColumnMap, type ColumnSchemaMap, createColumnMap } from "./column-map.js";
+import { RangeBuilder, type SheetLike } from "./range-builder.js";
 
 export const _sheetFinalizers = new WeakMap<SheetBuilder, () => Promise<void>>();
 
@@ -93,6 +95,16 @@ export class SheetBuilder {
   columns(defs: ColumnDef[]): this {
     this._columns = defs;
     return this;
+  }
+
+  /** Define columns explicitly and return a typed ColumnMap for safe references. */
+  defineColumns<T extends ColumnSchemaMap>(schema: T): ColumnMap<T> {
+    const map = createColumnMap(schema, () => ({
+      rowCount: this._rowCount,
+      headerWritten: this._headerWritten,
+    }));
+    this._columns = Object.values(map).map((ref) => ref.toColumnDef());
+    return map;
   }
 
   /** Append a single column definition. */
@@ -232,6 +244,11 @@ export class SheetBuilder {
     const r = range ?? (this._columns.length ? `A1:${colLetter(this._columns.length)}1` : "A1");
     applyAutoFilter(this._ws, r);
     return this;
+  }
+
+  /** Create a RangeBuilder for fluent range operations (style, validation, conditional formatting). */
+  range(spec: CellRange): RangeBuilder {
+    return new RangeBuilder(this as SheetLike, spec);
   }
 
   /** Add a structured table to the sheet. */
@@ -494,7 +511,8 @@ export class SheetBuilder {
 
   /** Write a formula string into a specific cell by A1 reference. */
   fillFormula(refStr: string, formula: string): this {
-    (this._ws.getCell(refStr) as { value: { formula: string } }).value = { formula };
+    const cell = this._ws.getCell(refStr);
+    cell.value = { formula } as ExcelCellValue;
     return this;
   }
 

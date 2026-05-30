@@ -16,7 +16,7 @@ import {
   toExcelBorder,
   toExcelFill,
   toExcelFont,
-} from "../style-presets.js";
+} from "../../styles/presets.js";
 
 describe("toExcelFont", () => {
   it("returns empty object for empty input", () => {

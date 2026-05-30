@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { cellRef, colLetter, colRange, rangeRef, resolveAddr, resolveRange } from "../coords.js";
+import {
+  cellRef,
+  colLetter,
+  colRange,
+  rangeRef,
+  resolveAddr,
+  resolveRange,
+} from "../../coords/coords.js";
 
 describe("coords", () => {
   describe("colLetter", () => {

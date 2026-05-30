@@ -9,7 +9,7 @@ import type {
   ThreadedComment,
   WatermarkOptions,
 } from "@cj-tech-master/excelts";
-import { resolveAddr } from "../coords.js";
+import { resolveAddr } from "../coords/coords.js";
 import type {
   Addr,
   AddSparklineGroupOptions,
@@ -17,7 +17,7 @@ import type {
   SheetBuilderExtension,
 } from "../types.js";
 
-declare module "../sheet-builder.js" {
+declare module "../builders/sheet-builder.js" {
   interface SheetBuilder {
     addNote(addr: Addr, text: string): this;
     addNote(addr: Addr, config: NoteConfig): this;
