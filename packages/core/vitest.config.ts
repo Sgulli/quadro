@@ -5,5 +5,6 @@ export default defineProject({
     globals: true,
     environment: "node",
     include: ["src/**/*.test.ts"],
+    exclude: ["src/**/*.bench.test.ts"],
   },
 });
